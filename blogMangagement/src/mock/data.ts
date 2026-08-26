@@ -1,5 +1,4 @@
 import Mock from 'mockjs'
-import { v } from 'vue-router/dist/index-BN0B0y8a.js'
 
 const Random = Mock.Random
 
