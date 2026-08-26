@@ -125,6 +125,7 @@ const photos = [
     "o.jpg",
     "p.jpg",
     "q.jpg",
+    "r.jpg"
 ]
 //文件数据
 export const files = Mock.mock({
