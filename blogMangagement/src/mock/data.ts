@@ -137,5 +137,4 @@ export const files = Mock.mock({
             "categoryId|0-4":3,
         }
     ]
-
 })
