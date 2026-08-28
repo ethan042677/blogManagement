@@ -126,7 +126,7 @@ const photos = [
     "q.jpg",
 ]
 //文件数据
-export const files = Mock.mock({
+export const mkFiles = Mock.mock({
     "count":64,
     "list|64":[
         {
