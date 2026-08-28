@@ -8,6 +8,7 @@
                 <Reply :is-comment="true" v-for="item in comments":key="item.id" :content="item" @delete="deleteComment"/>
             </yk-space>
         </yk-scrollbar>
+        <!-- 分页功能 -->
         <div class="comment-pagination">
             <yk-pagination :total="count" :page-size="pageSize" size="m"  @change="changePage"/>
         </div>
