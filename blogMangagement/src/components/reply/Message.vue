@@ -1,7 +1,7 @@
 <template>
     <yk-drawer placement="right" :show="active" @close="emits('close')" :title="'私信'+count">
         <yk-space dir="vertical">
-            <Reply v-for="item in comments":key="item.id" :content="item" @delete="deleteComment" :isComment="false",/>
+            <Reply v-for="item in comments":key="item.id" :content="item" @delete="deleteComment" :isComment="false" />
         </yk-space>
         <template #footer>
             <yk-pagination :total="count" simple @change="changePage"/>
