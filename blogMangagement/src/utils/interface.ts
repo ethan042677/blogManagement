@@ -1,4 +1,4 @@
-//回复内容
+//回复内容接口
 export type ReplyData = {
     id:number;
     article?:{
@@ -14,10 +14,19 @@ export type ReplyData = {
     moment:string;//时间
     complaint:number;//举报数
 }
-//分类
-export type CategoryData = {
+//分类接口
+export interface CategoryData {
     id:string,
     name:string | number,
     value:number,
     moment?:string
+}
+//文件接口
+export interface FileData {
+    id:number,
+    url:string,
+    fileName:string,
+    format:string,
+    categoryId:number,
+    selected?:boolean//是否选择
 }
