@@ -18,6 +18,9 @@
                 <IconSwitchOutline class="files-tool-switch"/>
             </yk-space>
         </div>
+        <div class="files-main">
+            <LocalFilesPhoto v-for="item in files" :data="item" :key="item.id"/>
+        </div>
         <!-- 分页功能 -->
         <div class="comment-pagination">
             <yk-pagination :total="count" :page-size="pageSize" size="m"  @change="changePage"/>
@@ -28,6 +31,8 @@
 <script setup lang="ts">
 import { ref,nextTick,onMounted } from 'vue';
 import { mkFiles } from '../../mock/data';
+import LocalFilesPhoto from './LocalFilesPhoto.vue';
+
 
 //文件props接口
 type FileProps = {
@@ -38,6 +43,8 @@ const props = withDefaults(defineProps<FileProps>(),{
     pageSize:8,
     categoryId:-1,// 全部
 })
+
+
 /**多选框部分 */
 const checkedAll = ref<boolean>(false)//全选
 const indeterminate = ref<boolean>(false)//半选
@@ -49,6 +56,7 @@ const handleChangeAll = (val:boolean)=>{
         checkedAll.value = false
     }
 }
+
 
 /** 分页部分 */
 const count = ref<number>(1234)
@@ -69,7 +77,7 @@ const request:Request = {
 }
 //获取数据方法
 const fetchFileData = (boo:boolean)=>{
-    const data = mkFiles.data
+    const data = mkFiles
     //控制值的获取
     if(boo){
         count.value = data.count
@@ -78,6 +86,8 @@ const fetchFileData = (boo:boolean)=>{
         (request.nowPage -1) * request.pageSize,
         (request.nowPage) * request.pageSize,
     )
+    console.log(files.value);
+    
 }
 /**
  * @description 翻页方法
@@ -90,6 +100,8 @@ const changePage = (page:number)=>{
         scrollbar.value?.scrollTo({ top: 0, behavior: 'smooth' })
     })
 }
+
+//生命周期
 onMounted(()=>{
     fetchFileData(true)
 })
@@ -101,7 +113,7 @@ onMounted(()=>{
     border-radius: @radius-m;
     width: 100%;
 
-    &-tool{
+    .files-tool{
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -109,8 +121,8 @@ onMounted(()=>{
         border-radius: @radius-m;
         background: @bg-color-m;
 
-        &-delete{
-            width: 200px;
+        .files-tool-delete{
+            width: 20px;
             height: 20px;
             color: @font-color-s;
             cursor: pointer;
@@ -119,6 +131,26 @@ onMounted(()=>{
                 color: @font-color-l;
             }
         }
+    }
+
+    &-main{
+        padding: 24px 0 32px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill,200px);
+        row-gap: 32px;
+        column-gap: 24px;
+        justify-content: center;
+    }
+    .comment-pagination{
+        flex-shrink: 0;
+        // 抵消卡片左右内边距，让分页条通栏贴在底部
+        margin: 0 -@space-xl;
+        padding: @space-l 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        background: @white;
     }
 }
 </style>
