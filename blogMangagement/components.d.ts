@@ -32,6 +32,7 @@ declare module 'vue' {
     LeftMenu: typeof import('./src/components/LeftMenu.vue')['default']
     LineChart: typeof import('./src/components/echarts/LineChart.vue')['default']
     LocalFiles: typeof import('./src/components/localFiles/LocalFiles.vue')['default']
+    LocalFilesPhoto: typeof import('./src/components/localFiles/LocalFilesPhoto.vue')['default']
     MenuBar: typeof import('./src/components/MenuBar.vue')['default']
     Message: typeof import('./src/components/reply/Message.vue')['default']
     PieChart: typeof import('./src/components/echarts/PieChart.vue')['default']
