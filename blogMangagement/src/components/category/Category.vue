@@ -1,6 +1,6 @@
 <template>
     <div class="category">
-        <yk-space>
+        <yk-space wrap>
             <!-- 分组：全部 -->
             <div class="category-menu" :class="{'category-menu-selected':selected== '-1all'}" @click="changeCategory(-1,'all')">
                 全部 {{ categoryStore.count }}
@@ -18,10 +18,10 @@
                 {{ item.name }} {{ item.value }}
             </div>
         </yk-space>
-        <yk-space>
+        <yk-space style="flex: none;">
             <!-- 新建 -->
             <yk-popconfirm
-                title="我自定义的标题"
+                title="新建分组"
                 @cancel="cancel"
                 @confirm="confirm"
                 trigger="click"

@@ -1,0 +1,35 @@
+// 插槽
+
+.category{
+    // 弹层面板自带左右内边距共 24px(12*2),且总宽封顶 250px
+    // 所以滚动条最多 226px;取 216px 时面板总宽 = 216+24 = 240px,不溢出
+    width: 216px;
+    // 面板右侧留白:用内边距,条目块右缘自动停在这条线内
+    padding-right: 10px;
+
+    &-item{
+        background-color: @bg-color-m;
+        line-height: 32px;
+        padding: 0 @space-l;
+        border-radius: @radius-r;
+        cursor: pointer;
+        transition: all @animatb;
+        user-select: none;
+        // 用相邻兄弟选择器代替上下 margin,避免垂直外边距塌陷
+        & + &{
+            margin-top: @space-s;
+            margin-bottom: @space-s;
+        }
+        &:hover{
+            background-color: @bg-color-s;
+        }
+    }
+    .category-selected{
+            background-color: @pcolor-1;
+            color: @pcolor;
+            font-size: 500;
+            &:hover{
+                background-color: @pcolor-1;
+            }
+        }
+}

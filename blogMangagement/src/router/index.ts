@@ -16,6 +16,14 @@ const routes = [
                 path: 'localfile',
                 component: () => import('../views/LocalFileView.vue'), // 懒加载
             },
+            {
+                path: 'article',
+                component: () => import('../views/ArticleView.vue'), // 懒加载
+            },
+            {
+                path: 'gallery',
+                component: () => import('../views/ArticleView.vue'), // 懒加载
+            },
         ],
     },
 ]
