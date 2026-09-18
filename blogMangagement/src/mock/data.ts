@@ -134,7 +134,37 @@ export const mkFiles = Mock.mock({
             "url|1":photos,
             "fileName":"@ctitle(2,12)",
             "format":"jpeg",
+            "categoryId|0-3":3,
+        }
+    ]
+})
+//标签数据
+export const mkLabel = Mock.mock({
+    "data":{
+        "count":123,
+        "list|4":[{
+            "id|+1":0,
+            "name":"@ctitle(3,6)",
+            "moment":"@datetime()"
+        }]
+    }
+})
+// 文章数据
+export const mkArticle = Mock.mock({
+    "count":64,
+    "list|64":[
+        {
+            "id|+1":0,
+            "cover|1":photos,
             "categoryId|0-4":3,
+            "moment":"@datetime()",
+            "title":"@ctitle(4,12)",
+            "label|0-3":["@ctitle(2,4)"],
+            "introduction":"@cparagraph(1,4)",//内容
+            "views|12-429":122,//查看次数
+            "state|0-1":0,
+            "comment|8-24":11,
+            "praise|8-123":42
         }
     ]
 })
