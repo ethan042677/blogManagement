@@ -30,3 +30,22 @@ export interface FileData {
     categoryId:number,
     selected?:boolean//是否选择
 }
+//标签接口
+export interface LabelData {
+    id:string,
+    name:string | number,
+    moment?:string
+}
+export interface ArticleData {
+    id:number;
+    title?:string;
+    categoryId?:number;//分类
+    moment:string;//时间
+    label?:string[];
+    introduction?:string;//简介
+    cover?:string;//封面地址
+    views:number;//查看次数
+    state:number//状态0未发布1已发布
+    comment:number;
+    praise:number;//点赞次数
+}
