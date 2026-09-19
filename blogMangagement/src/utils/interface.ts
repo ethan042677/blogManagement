@@ -49,3 +49,18 @@ export interface ArticleData {
     comment:number;
     praise:number;//点赞次数
 }
+
+export interface GalleryData {
+    id:number;
+    title?:string;
+    categoryId?:number;//分类
+    moment:string;//时间
+    label?:string[];
+    introduction?:string;//简介
+    cover?:string;//封面地址
+    views:number;//查看次数
+    comment:number;
+    praise:number;//点赞次数
+    content?:string | string[];//内容
+    state:number
+}

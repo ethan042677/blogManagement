@@ -168,3 +168,31 @@ export const mkArticle = Mock.mock({
         }
     ]
 })
+const photoList = [
+    ["a.png"],
+    ["b.png","c.png"],
+    ["d.png","e.png","f.png"],
+    ["g.png","h.png","i.png"],
+    ["j.png","k.png","l.png"],
+    ["m.png","n.png","o.png"],
+
+]
+// 图库数据
+export const mkGallery = Mock.mock({
+    "count":64,
+    "list|64":[
+        {
+            "id|+1":0,
+            "cover|1":photos,
+            "categoryId|0-4":3,
+            "moment":"@datetime()",
+            "title":"@ctitle(4,12)",
+            "label|0-3":["@ctitle(2,4)"],
+            "introduction":"@cparagraph(1,4)",//内容
+            "views|12-429":122,//查看次数
+            "content|1":photoList,
+            "comment|8-24":11,
+            "praise|8-123":42
+        }
+    ]
+})

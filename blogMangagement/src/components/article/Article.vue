@@ -14,7 +14,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref,onMounted,getCurrentInstance,nextTick } from 'vue';
+import { ref,onMounted,getCurrentInstance } from 'vue';
 import ArticleItem from './ArticleItem.vue';
 import { mkArticle } from '../../mock/data';
 import type{ ArticleData } from '../../utils/interface.ts';

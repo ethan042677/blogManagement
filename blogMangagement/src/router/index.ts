@@ -22,7 +22,7 @@ const routes = [
             },
             {
                 path: 'gallery',
-                component: () => import('../views/ArticleView.vue'), // 懒加载
+                component: () => import('../views/GalleryView.vue'), // 懒加载
             },
         ],
     },
