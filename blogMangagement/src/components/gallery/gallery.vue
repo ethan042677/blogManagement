@@ -63,8 +63,8 @@ const galleryList = ref<GalleryData[]>([])
 const count = ref<number>(0)
 //获取图库方法
 const fetchGallery = (isCount:boolean) =>{
-    if(isCount){
-        count.value = mkGallery.count
+    if(isCount){ 
+        count.value = mkGallery.count 
     }
     galleryList.value = mkGallery.list.slice(
         (request.nowPage -1) * request.pageSize,
@@ -74,7 +74,6 @@ const fetchGallery = (isCount:boolean) =>{
 /**删除 */
 const deleteGallery = (id:number) => {
     galleryList.value = galleryList.value.filter(obj => obj.id !== id)
-    console.log(id);
 }
 
 /**翻页方法 */

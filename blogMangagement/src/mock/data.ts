@@ -196,3 +196,18 @@ export const mkGallery = Mock.mock({
         }
     ]
 })
+//随笔随记数据
+export const mkDiary = Mock.mock({
+    "count":64,
+    "list|64":[
+        {
+            "id|+1":0,
+            "cover|1":photos,
+            "moment":"@datetime()",
+            "title":"@ctitle(4,12)",
+            "weatherId|0-7":0,
+            "content":"@cparagraph(2,10)",//内容
+            "picture|1":photoList,
+        }
+    ]
+})

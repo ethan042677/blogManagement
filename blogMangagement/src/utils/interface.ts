@@ -36,6 +36,7 @@ export interface LabelData {
     name:string | number,
     moment?:string
 }
+//文章
 export interface ArticleData {
     id:number;
     title?:string;
@@ -49,7 +50,7 @@ export interface ArticleData {
     comment:number;
     praise:number;//点赞次数
 }
-
+//图库
 export interface GalleryData {
     id:number;
     title?:string;
@@ -63,4 +64,13 @@ export interface GalleryData {
     praise:number;//点赞次数
     content?:string | string[];//内容
     state:number
+}
+//随笔随记
+export interface DiaryData {
+    id:number;
+    title:string;
+    moment:string;//时间
+    weatherId:number;
+    content:string;//内容
+    picture?:string[]
 }

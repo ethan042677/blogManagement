@@ -24,6 +24,10 @@ const routes = [
                 path: 'gallery',
                 component: () => import('../views/GalleryView.vue'), // 懒加载
             },
+            {
+                path: 'diary',
+                component: () => import('../views/DiaryView.vue'), // 懒加载
+            },
         ],
     },
 ]
