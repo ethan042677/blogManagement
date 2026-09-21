@@ -52,7 +52,7 @@ export const overLinks = [
         bgColor:"180deg,#25df0629 0%,#25df063d 100%"
     },
     {
-        path:"editDiary",
+        path:"diary",
         name:"随笔随记",
         total:0,
         bgColor:"180deg,#00c9f529 0%,#00c9f53d 100%"

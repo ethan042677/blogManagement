@@ -7,7 +7,7 @@
                 <yk-title :level="2" style="margin:0">{{ item.total }}</yk-title>
             </yk-space>
             <!-- 新增按钮 -->
-            <yk-button v-if="index>0" size="xl" type="secondary" shape="square">
+            <yk-button v-if="index>0" size="xl" type="secondary" shape="square" @click="goPage(item.path)">
                 <IconPlusOutline />
             </yk-button>
         </div>
@@ -17,11 +17,13 @@
 <script setup lang="ts">
 import { overLinks } from '../../utils/menu';
 import { overViewData } from '../../mock/data';
-import { ref } from 'vue';
-
+import { ref,onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 
 // 变量
 const gathers = ref(overLinks)
+// 路由
+const router = useRouter();
 //模拟获取数据
 const fetchGatherData = ()=>{
     try {
@@ -35,7 +37,14 @@ const fetchGatherData = ()=>{
         console.error("获取失败！")
     }
 }
-fetchGatherData()
+/**跳转页面方法 */
+const goPage = (path:string)=>{
+    router.push(path)
+}
+//生命周期
+onMounted(()=>{
+    fetchGatherData()
+})
 </script>
 
 <style scoped lang="less">

@@ -121,9 +121,6 @@ onMounted(()=>{
             }
         }
     }
-    &-images{
-
-    }
     &:hover{
         .diary-item-top-delete{
             display: block;

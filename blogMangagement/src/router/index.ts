@@ -30,6 +30,11 @@ const routes = [
             },
         ],
     },
+    {
+        // 全屏编辑页，不套 IndexView，所以没有左侧导航栏
+        path: '/editGallery',
+        component: () => import('../views/EditGallery.vue'), // 懒加载
+    },
 ]
 
 const router = createRouter({
