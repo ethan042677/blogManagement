@@ -211,3 +211,12 @@ export const mkDiary = Mock.mock({
         }
     ]
 })
+//图片列表
+export const mkPhotos = Mock.mock({
+    "data|6":[
+        {
+            "id|+1":0,
+            "url|1":photos,
+        }
+    ]
+})
