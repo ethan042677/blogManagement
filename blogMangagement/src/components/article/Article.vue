@@ -71,8 +71,6 @@ const fetchArticles = (isCount:boolean) =>{
 /**删除 */
 const deleteArticle = (id:number) => {
     articleList.value = articleList.value.filter(obj => obj.id !== id)
-    console.log(id);
-    
 }
 /**修改状态 */
 const proxy: any = getCurrentInstance()?.proxy
