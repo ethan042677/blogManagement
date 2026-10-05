@@ -19,22 +19,25 @@
 
 <script setup lang="ts">
 import {ref} from 'vue'
-//类型
+/** type类型 */
 type titleProp = {
     name?:string;
     isSearch:boolean;
 }
-//props
+
+/**
+ * @name  props
+ * @description 接收传入的数据
+ */
 const props = withDefaults(defineProps<titleProp>(),{
     name:"总览",
     isSearch:true,
 })
 
+/**搜索方法 */
 const emit = defineEmits(['search'])
-//变量
+//搜索的内容
 const searchData = ref();
-
-//搜索方法
 const search = ()=>{
     emit('search',searchData.value)
 }

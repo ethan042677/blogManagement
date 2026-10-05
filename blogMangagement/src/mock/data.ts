@@ -56,7 +56,7 @@ export const monitorData = Mock.mock({
     },
 })
 // 评论
-export const comment = Mock.mock({
+export const mkComment = Mock.mock({
     "code":200,
     "data":{
         "count":123,

@@ -1,10 +1,13 @@
 <template>
     <div class="card">
         <div class="card-title">
+            <!-- 展示评论总数 -->
             <p class="card-title-name">评论 {{ count }}</p>
         </div>
+        <!-- 滚动域 -->
         <yk-scrollbar ref="scrollbar" class="comment-scroll" style="padding: 0 24px;">
             <yk-space dir="vertical">
+                <!-- 评论内容组件，展示每一条评论 -->
                 <Reply :is-comment="true" v-for="item in comments":key="item.id" :content="item" @delete="deleteComment"/>
             </yk-space>
         </yk-scrollbar>
@@ -18,10 +21,9 @@
 <script lang="ts" setup>
 import { ref,onMounted,getCurrentInstance,nextTick } from 'vue';
 import Reply from '../reply/Reply.vue'
-import {comment} from "../../mock/data.ts"
+import {mkComment} from "../../mock/data.ts"
 import type { CommentProps } from './reply.ts';
 
-// 变量
 //通过getCurrentInstance()方法拿到组件实例，proxy是其一个属性
 const proxy:any = getCurrentInstance()?.proxy
 const props = withDefaults(defineProps<CommentProps>(),{
@@ -34,7 +36,7 @@ const comments = ref()
 // 滚动条实例
 const scrollbar = ref()
 
-//请求
+//请求类型
 type Request = {
     token?:string,
     pageSize:number,//单页条数
@@ -46,13 +48,17 @@ const request:Request = {
     nowPage:1,
 }
 //获取数据方法
-const fetchCommentData = ()=>{
-    const data = comment.data
-    count.value = data.count
-    comments.value = data.list.slice(
-        (request.nowPage -1) * request.pageSize,
-        (request.nowPage) * request.pageSize,
-    )
+const fetchCommentData = async ()=>{
+    try {
+        const data = await mkComment.data
+        count.value = data.count
+        comments.value = data.list.slice(
+            (request.nowPage -1) * request.pageSize,
+            (request.nowPage) * request.pageSize,
+        )
+    } catch (error) {
+        console.error("获取评论数据失败")
+    }
 }
 /**
  * @description 删除评论

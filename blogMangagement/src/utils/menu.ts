@@ -31,7 +31,7 @@ export const navLinks = [
     }
 ]
 
-//总览总数
+//总览卡片数据
 export const overLinks = [
     {
         path:"",

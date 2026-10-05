@@ -22,16 +22,15 @@
 <script lang="ts" setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-const router = useRouter();
 import Message from './reply/Message.vue';
-//返回总览页面
+//router:返回总览页面
+const router = useRouter();
 const backHome = ()=>{
     router.push('/');
 }
-// 变量
-const active = ref<boolean>(false)
 
-// 方法
+//控制私信弹出
+const active = ref<boolean>(false)
 const changeMessage = (boo:boolean)=>{
     active.value = boo;
 }
