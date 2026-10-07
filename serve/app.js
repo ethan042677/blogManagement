@@ -3,6 +3,7 @@ const app = express();
 const path = require('path');
 const config = require('./config/default');
 const cors = require('cors');
+const sql = require('./models/sql')
 
 /**引入静态文件 */
 //设置静态目录
