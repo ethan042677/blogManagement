@@ -3,7 +3,7 @@ const app = express();
 const path = require('path');
 const config = require('./config/default');
 const cors = require('cors');
-const sql = require('./models/sql')
+const bodyParser = require('body-parser')
 
 /**引入静态文件 */
 //设置静态目录
@@ -14,7 +14,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors());
 
 /**解析前端数据 */
-app.use(express.json());//解析位：request.body
+//解析application/x-www-form-urlencoded数据格式
+app.use(bodyParser.urlencoded({extended:true}))
+//解析json数据格式
+app.use(bodyParser.json())
+//解析text/plain数据格式
+app.use(bodyParser.text())
 
 /**引入路由 */
 require('./routes/index')(app);
