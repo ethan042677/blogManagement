@@ -16,4 +16,16 @@ module.exports = function (app){
     app.post('/signin',(req,res) => {
         serve.adminSignin(req,res)
     }) 
+    //获取评论
+    app.post('/comment',(req,res)=>{
+        //
+        if(req.body?.token){
+            serve.getComment(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
 }

@@ -50,25 +50,72 @@ exports.register = async (req,res)=>{
 exports.adminSignin = async (req,res)=>{
     try {
         const data = req.body
-        const result = await dbModel.adminSignin(data.name)
-        //如果查出的管理员账号存在，且密码相同
-        if(result.length > 0 && data.password === result[0].password){
-            const token = jwt.generateToken(data.name)
-            const adminData = {
-                ...result[0],
-                ...{token}
-            }
-            res.send({
-                code:200,
-                msg:"登录成功",
-                data:adminData
+        //提交的名称或者密码不合法直接400
+        if(!data.name || !data.password){
+            return res.status(400).send({
+                code:400,
+                msg:"账号密码不能为空"
             })
         }
+        const result = await dbModel.adminSignin(data.name)
+        //账号不存在或者密码错误直接401
+        if(result.length === 0 || data.password !== result[0].password){
+            return res.status(401).send({
+                code:401,
+                msg:"账号或者密码错误"
+            })
+        }
+        //登录成功，生成token,
+        const token = jwt.generateToken(data.name)
+        const adminData = {
+            ...result[0],
+            ...{token}
+        }
+        res.send({
+            code:200,
+            msg:"登录成功",
+            data:adminData
+        })
     } catch (error) {
         console.error("登录失败")
         res.status(500).send({ 
             code: 500, 
             msg: '登录失败' 
         });
+    }
+}
+//获取评论
+exports.getComment = async (req,res)=>{
+    try {
+        const data = req.body;
+        let count = -1;//未查询
+        const result = await dbModel.getCommentPage(data.pageSize,data.nowPage)
+        if(data.count){
+            const total = await dbModel.getCommentCount()
+            count = total[0].count
+        }
+        //
+        if(result.length > 0){
+            for(let i = 0;i<result.length;i++){
+                const articleTitle = await dbModel.getArticleTitle(result[i].article_id)
+                result[i].article = {
+                    id:result[i].article_id,
+                    title:articleTitle[0].title
+                }
+            }
+        } 
+        res.send({
+            code:200,
+            data:{
+                count,
+                result
+            }
+        })
+    } catch (error) {
+        console.error("获取评论失败:", error)
+        res.status(500).send({
+            code:500,
+            msg:"获取评论失败"
+        })
     }
 }

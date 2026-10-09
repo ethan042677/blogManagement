@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken')
 const secretKey = 'gsgrrgrsdfffcdff'
+
+//避免魔法数字，使用常量映射
+const PASS = 1;
+const FAIL = 0;
 //生成token
 exports.generateToken = (id) => {
     const payload = {id:id,time:new Date()}
@@ -7,19 +11,16 @@ exports.generateToken = (id) => {
     return token;
 }
 //解码token
-exports.verifyToken = (id)=>{
-    try {
-        let payload;
-        jwt.verify(id, secretKey,(err,result)=>{
-            if(err){
-                payload = 0;
-            }else{
-                payload = 1;
-            }
-        });
-        return payload;
-    } catch (error) {
-        console.error("无效的令牌")
-    }
+exports.verifyToken = (token)=>{
+    let payload;
+    jwt.verify(token, secretKey,(err,result)=>{
+        if(err){
+            payload = FAIL;
+            console.error("无效的令牌：",err.message)
+        }else{
+            payload = PASS;
+        }
+    });
+    return payload;
 
 }
