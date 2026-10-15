@@ -88,13 +88,15 @@ exports.adminSignin = async (req,res)=>{
 exports.getComment = async (req,res)=>{
     try {
         const data = req.body;
-        let count = -1;//未查询
+        const NO_QUERY = -1 
+        let count = NO_QUERY;//未查询
         const result = await dbModel.getCommentPage(data.pageSize,data.nowPage)
+        //需要count，再去查count
         if(data.count){
             const total = await dbModel.getCommentCount()
             count = total[0].count
         }
-        //
+        //确保数据库里有东西，如果有再把需要的数据整理发送前端
         if(result.length > 0){
             for(let i = 0;i<result.length;i++){
                 const articleTitle = await dbModel.getArticleTitle(result[i].article_id)
@@ -116,6 +118,66 @@ exports.getComment = async (req,res)=>{
         res.status(500).send({
             code:500,
             msg:"获取评论失败"
+        })
+    }
+}
+//获取私信
+exports.getMessage = async (req,res)=>{
+    try {
+        const data = req.body;
+        const NO_QUERY = -1 
+        let count = NO_QUERY;//未查询
+        const result = await dbModel.getMessagePage(data.pageSize,data.nowPage)
+        //需要count，再去查count
+        if(data.count){
+            const total = await dbModel.getMessageCount()
+            count = total[0].count
+        }
+        //将私信变为已读
+        if(result.length > 0){
+            for(let i = 0;i < result.length;i++){
+                await dbModel.updateMessageRead(result[i].id)
+            }
+        }
+        res.send({
+            code:200,
+            data:{
+                count,
+                result
+            }
+        })
+    } catch (error) {
+        console.error("获取私信失败:", error)
+        res.status(500).send({
+            code:500,
+            msg:"获取私信失败"
+        })
+    }
+}
+//获取文章
+exports.getArticle = async (req,res)=>{
+    try {
+        const data = req.body;
+        const NO_QUERY = -1 
+        let count = NO_QUERY;//未查询
+        const result = await dbModel.getArticlePage(data.pageSize,data.nowPage,data.state,data.categoryId,data.searchTerm)
+        //需要count，再去查count
+        if(data.count){
+            const total = await dbModel.getArticleCount()
+            count = total[0].count
+        }
+        res.send({
+            code:200,
+            data:{
+                count,
+                result
+            }
+        })
+    } catch (error) {
+        console.error("获取私信失败:", error)
+        res.status(500).send({
+            code:500,
+            msg:"获取私信失败"
         })
     }
 }

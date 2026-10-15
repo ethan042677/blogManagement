@@ -18,9 +18,21 @@ module.exports = function (app){
     }) 
     //获取评论
     app.post('/comment',(req,res)=>{
-        //
-        if(req.body?.token){
+        //有token，经过全局token检查后再去拿评论数据
+        if(req.body.token){
             serve.getComment(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //获取文章
+    app.post('/article',(req,res)=>{
+        //有token，经过全局token检查后再去拿评论数据
+        if(req.body.token){
+            serve.getArticle(req,res)
         }else{
             res.send({
                 code:300,
