@@ -1,6 +1,7 @@
 const dbModel = require('../models/db_model')
 const jwt = require('../utils/jsonwebtoken')
-
+//常量映射
+const NO_QUERY = -1 
 //查看是否注册
 exports.isRegister = async (req,res) =>{
     try {
@@ -88,7 +89,6 @@ exports.adminSignin = async (req,res)=>{
 exports.getComment = async (req,res)=>{
     try {
         const data = req.body;
-        const NO_QUERY = -1 
         let count = NO_QUERY;//未查询
         const result = await dbModel.getCommentPage(data.pageSize,data.nowPage)
         //需要count，再去查count
@@ -125,7 +125,6 @@ exports.getComment = async (req,res)=>{
 exports.getMessage = async (req,res)=>{
     try {
         const data = req.body;
-        const NO_QUERY = -1 
         let count = NO_QUERY;//未查询
         const result = await dbModel.getMessagePage(data.pageSize,data.nowPage)
         //需要count，再去查count
@@ -158,9 +157,8 @@ exports.getMessage = async (req,res)=>{
 exports.getArticle = async (req,res)=>{
     try {
         const data = req.body;
-        const NO_QUERY = -1 
         let count = NO_QUERY;//未查询
-        const result = await dbModel.getArticlePage(data.pageSize,data.nowPage,data.state,data.categoryId,data.searchTerm)
+        const result = await dbModel.getArticlePage(data.pageSize,data.nowPage,data.state,data.categoryId,data.searchTerm,data.classify)
         //需要count，再去查count
         if(data.count){
             const total = await dbModel.getArticleCount()
@@ -178,6 +176,276 @@ exports.getArticle = async (req,res)=>{
         res.status(500).send({
             code:500,
             msg:"获取私信失败"
+        })
+    }
+}
+//修改文章状态
+exports.changeArticleState = async (req,res) => {
+    try {
+        const data = req.body
+        const result = await dbModel.changeArticleState(data.id,data.state)
+        res.send({
+            code:200,
+            msg:"文章状态修改成功"
+        })
+    } catch (error) {
+        console.error("文章状态修改失败：",error)
+        res.status(500).send({
+            code:500,
+            msg:"修改文章状态失败"
+        })
+    }
+}
+//删除文章
+exports.deleteArticle = async (req,res) =>{
+    try {
+        const data = req.body
+        const result  = await dbModel.deleteArticle(data.id)
+        res.send({
+            code:200,
+            msg:"文章删除成功"
+        })
+    } catch (error) {
+        console.error("文章删除失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"删除文章失败"
+        })
+    }
+}
+//查询文章不同状态总数
+exports.getArticleStateCount = async (req,res)=>{
+    try {
+        const data = req.body
+        //未发布总数
+        const unpublishState = await dbModel.getArticleCount(0,-1,'',0)
+        //已发布总数
+        const publishState = await dbModel.getArticleCount(1,-1,'',0)
+        const result = [
+            {
+                id:0,//未发布
+                value:unpublishState[0].count
+            },{
+                id:1,//已发布
+                value:publishState[0].count
+            }
+        ]
+        res.send({
+            code:200,
+            data:result
+        })
+    } catch (error) {
+        console.error("文章不同状态数量查询失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"文章不同状态数量查询失败"
+        })
+    }
+}
+
+//获取分类
+exports.getCategory = async (req,res) =>{
+    try {
+        const data = req.body
+        const result = await dbModel.getCategory(data.classify)
+        //如果是文章或者图片
+        if(data.classify === 0 || data.classify === 1){
+            //总条数
+            const count = await dbModel.getArticleCount(-1,-1,"",data.classify)
+            //返回的数据
+            const list  = []
+            if(result.length > 0){
+                for(let i = 0;i<result.length;i++){
+                    // 每个标签下的条数
+                    const value = await dbModel.getArticleCount(-1,result[i].id,"",data.classify) 
+                    list[i] = {
+                        id:result[i].id,
+                        name:result[i].category_name,
+                        value:value[0].count
+                    }
+                }
+            }
+            res.send({
+                code:200,
+                data:{
+                    count:count[0].count,
+                    list
+                }
+            })
+        }else if(data.classify === 2){
+            //查文件
+            //总条数
+            const count = await dbModel.getFileCount(-1)
+            //返回的数据
+            const list  = []
+            if(result.length > 0){
+                for(let i = 0;i < result.length;i++){
+                    // 每个标签下的条数
+                    const value = await dbModel.getFileCount(result[i].id) 
+                    list[i] = {
+                        id:result[i].id,
+                        name:result[i].category_name,
+                        value:value[0].count
+                    }
+                }
+            }
+            res.send({
+                code:200,
+                data:{
+                    count:count[0].count,
+                    list
+                }
+            })
+        }
+    } catch (error) {
+        console.error("获取分类失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"获取分类失败"
+        })
+    }
+}
+//新建分类
+exports.addCategory = async (req,res) =>{
+    try {
+        const data = req.body
+        await dbModel.addCategory(data.value)
+        res.send({
+            code:200
+        })
+    } catch (error) {
+        console.error("新建分类失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"新建分类失败"
+        })
+    }
+}
+//修改分类名称
+exports.updateCategoryName = async (req,res) => {
+    try {
+        const data = req.body
+        const result = await dbModel.updateCategoryName(data.categoryId,data.categoryName)
+        res.send({
+            code:200,
+            msg:"修改分类名称成功"
+        })
+    } catch (error) {
+        console.error("修改分类名称失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"修改分类名称失败"
+        })
+    }
+}
+//删除分类
+exports.deleteCategory = async (req,res) =>{
+    try {
+        const data = req.body
+        const result  = await dbModel.deleteCategory(data.categoryId)
+        res.send({
+            code:200,
+            msg:"分类删除成功"
+        })
+    } catch (error) {
+        console.error("分类删除失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"删除分类失败"
+        })
+    }
+}
+
+//获取标签
+exports.getLabel = async (req,res)=>{
+    try {
+        const result  = await dbModel.getLabel()
+        res.send({
+            code:200,
+            data:result
+        })
+    } catch (error) {
+        console.error("获取标签失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"获取标签失败"
+        })
+    }
+}
+//新建标签
+exports.addLabel = async (req,res) =>{
+    try {
+        const data = req.body
+        await dbModel.addCategory(data.value)
+        res.send({
+            code:200
+        })
+    } catch (error) {
+        console.error("新建标签失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"新建标签失败"
+        })
+    }
+}
+//删除标签
+exports.deleteLabel = async (req,res) =>{
+    try {
+        const data = req.body
+        const result  = await dbModel.deleteLabel(data.labelId)
+        res.send({
+            code:200,
+            msg:"标签删除成功"
+        })
+    } catch (error) {
+        console.error("标签删除失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"删除标签失败"
+        })
+    }
+}
+
+//获取文件
+exports.getFilePage = async (req,res) =>{
+    try {
+        const data = req.body
+        let count = NO_QUERY
+        const result = await dbModel.getFilePage(data.pageSize,data.nowPage,data.categoryId)
+        //需要count，再去查count
+        if(data.count){
+            const total = await dbModel.getFileCount(data.categoryId)
+            count = total[0].count
+        }
+        res.send({
+            code:200,
+            data:{
+                count,
+                result
+            }
+        })
+    } catch (error) {
+        console.error("获取文件失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"获取文件失败"
+        })
+    }
+}
+//移动文件
+exports.moveFile = async (req,res) => {
+    try {
+        const data = req.body
+        const result = await dbModel.moveFile(data.fileId,data.categoryId)
+        res.send({
+            code:200,
+            msg:"移动文件成功"
+        })
+    } catch (error) {
+        console.error("移动文件失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"移动文件失败"
         })
     }
 }
