@@ -39,10 +39,12 @@ const emit = defineEmits(['search'])
 //搜索的内容
 const searchData = ref();
 const search = ()=>{
+    // 把搜索词交给父页面刷新列表
     emit('search',searchData.value)
 }
 //取消搜索方法
 const cancelSearch = ()=>{
+    // 清空输入框并通知父页面恢复完整列表
     emit('search','')
     searchData.value = ''
 }

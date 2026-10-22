@@ -15,6 +15,7 @@
 </template>
 
 <script setup lang="ts">
+// 页面标题、总览卡片、统计图表和评论列表
 import TopTitle from '../components/TopTitle.vue';
 import Gather from '../components/overView/Gather.vue';
 import Data from '../components/overView/Data.vue';

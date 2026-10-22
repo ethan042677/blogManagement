@@ -39,9 +39,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed,getCurrentInstance,onMounted } from 'vue';
+import { computed,getCurrentInstance } from 'vue';
 import type { DiaryData } from '../../utils/interface';
 import { weatherList } from '../../utils/weather';
+import { resolveAssetUrl } from '../../utils/request';
 
 /**拿到父级传的数据 */
 type DiaryProps = {
@@ -54,21 +55,25 @@ const emits = defineEmits(['deleteDiary'])
 /** 图片url*/
 const pictureUrl = computed(()=>{
     if(props.data.picture){
-        //深拷贝
+        // 深拷贝后转换地址，避免修改父组件数据
         const tempList = JSON.parse(JSON.stringify(props.data.picture))
-        const picArr = tempList.map((item:any) => item = `./src/assets/images/${item}`)
+        const picArr = tempList.map((item:any) => resolveAssetUrl(item))
         return picArr
     }
-    return console.error("undefined")
+    return []
 })
 /**截取时间 */
 const resultTime = computed(()=>{
-    //只保留年,月,日,时,分
+    // 只保留年月日时分
     return props.data?.moment.substring(0,16)
 })
 /**获取天气图标 */
 const weatherUrl = computed(()=>{
-    return `./src/assets/${weatherList[props.data.weatherId].icon}`
+    // 兼容天气 id 从 0 或 1 开始的数据
+    const weather = weatherList.find((item) => item.id === Number(props.data.weatherId))
+        || weatherList[Math.max(Number(props.data.weatherId) - 1, 0)]
+        || weatherList[0]
+    return `./src/assets/${weather.icon}`
 })
 
 /**删除气泡框 */
@@ -77,15 +82,11 @@ function cancel() {
     proxy.$message({ type: 'warning', message: '取消删除' })
 }
 function deleteDiary(id:number) {
+    // 删除请求由父组件统一处理
     emits("deleteDiary",id)
     proxy.$message({ type: 'primary', message: '删除成功' })
 }
 
-// 生命周期
-onMounted(()=>{
-    console.log(pictureUrl.value);
-    
-})
 </script>
 
 <style lang="less" scoped>

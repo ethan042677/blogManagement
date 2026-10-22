@@ -29,44 +29,53 @@
 
 <script setup lang="ts">
 import {getCurrentInstance} from 'vue'
+import { categoryApi } from '../../api';
 import { useCategoryStore } from '../../store/category';
 
 //store
 const categoryStore = useCategoryStore();
 
 const proxy: any = getCurrentInstance()?.proxy
+const emits = defineEmits(['changed'])
 // 当前分组名称
 let nowCategoryName:string|number;
 /**
  * @description 聚焦方法
  */
 const focusCategory = (id:number|string)=>{
+    // 聚焦时记录旧名称，失焦后用于判断是否真的修改
     let result = categoryStore.data.find((item:{id:number|string})=> item.id === id)
     if(result) nowCategoryName = result.name;
 }
 /**
  * @description 失焦方法
  */
-const blurCategory = (id:number|string)=>{
+const blurCategory = async (id:number|string)=>{
+    // 只有名称发生变化才调用修改接口
     let result = categoryStore.data.find((item:{id:number|string})=> item.id === id)
     if(result && nowCategoryName !== result.name){
-        // 提交后端
-        proxy.$message({ type: 'primary', message: '修改成功' })
+        try {
+            await categoryApi.rename(Number(id), String(result.name))
+            proxy.$message({ type: 'primary', message: '修改成功' })
+            emits('changed')
+        } catch (error) {
+            proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '修改失败' })
+            emits('changed')
+        }
     }
 }
 /**
  *  @description 删除方法
  */
-const deleteCategory = (id:number|string)=>{
-    categoryStore.data = categoryStore.data.filter(
-        (obj:{value:any;id:number|string})=>{
-            if(obj.id === id){
-                categoryStore.calculateUncategorized.value += obj.value
-            }
-            return obj.id !== id
-        }
-    )
-    proxy.$message({ type: 'primary', message: '删除成功' })
+const deleteCategory = async (id:number|string)=>{
+    try {
+        // [联调修复] 删除分类后由后端把关联内容移到“未分类”，再重新拉取统计。
+        await categoryApi.delete(Number(id))
+        emits('changed')
+        proxy.$message({ type: 'primary', message: '删除成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '删除失败' })
+    }
 }
 </script>
 

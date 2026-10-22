@@ -182,6 +182,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    // 移除监听并释放图表实例，防止重复进入页面后内存泄漏
     window.removeEventListener('resize', handleResize)
     chartInstance?.dispose()
 })

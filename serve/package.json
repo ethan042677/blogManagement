@@ -11,12 +11,13 @@
     "dev": "nodemon app.js"
   },
   "dependencies": {
-    "body-parser": "^2.3.0",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "jsonwebtoken": "^9.0.3",
-    "multer": "^2.4.0",
-    "mysql2": "^3.24.5"
+    "body-parser": "2.3.0",
+    "cors": "2.8.6",
+    "express": "5.2.1",
+    "jsonwebtoken": "9.0.3",
+    "multer": "2.4.0",
+    "mysql2": "3.24.5",
+    "sequelize": "6.37.8"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

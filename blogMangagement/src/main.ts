@@ -18,4 +18,5 @@ const pinia = createPinia()
 app.config.globalProperties.$notification = YkNotification
 app.config.globalProperties.$message = YkMessage
 
-app.use(router).use(Icon).use(pinia).mount('#app')
+// [联调修复] Pinia 需要先于路由守卫使用。
+app.use(pinia).use(Icon).use(router).mount('#app')

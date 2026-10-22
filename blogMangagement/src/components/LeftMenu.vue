@@ -10,6 +10,7 @@
 </template>
 
 <script setup lang="ts">
+// 左侧导航菜单配置
 import  {navLinks} from '../utils/menu.ts';
 </script>
 

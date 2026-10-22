@@ -17,75 +17,74 @@
 </template>
 
 <script lang="ts" setup>
-import { ref,onMounted } from 'vue';
-import { mkGallery } from '../../mock/data';
+import { ref,onMounted,getCurrentInstance,watch } from 'vue';
+import { articleApi } from '../../api';
 import type{ GalleryData } from '../../utils/interface.ts';
 import GalleryItem from './GalleryItem.vue';
 
+// 图库列表的父组件参数
 const props = defineProps({
-    pageSize:{
-        type:Number,
-        default:6
-    },
-    categoryId:{
-        type:Number,
-        default:-1
-    },
-    state:{
-        type:Number,
-        default:0
-    },
-    searchTerm:{
-        type:String,
-        default:""
-    }
+    pageSize:{ type:Number, default:6 }, // 单页条数
+    categoryId:{ type:[Number, String] as any, default:-1 }, // 分类 id
+    searchTerm:{ type:String, default:"" }, // 搜索词条
 })
-type Request = {
-    pageSize:number;//单页条数
-    nowPage:number;//当前页
-    state?:number;//状态
-    categoryId?:number;//分类
-    searchTerm?:string;//搜索词条
-    isCount?:boolean;
+
+// 当前图库列表请求参数
+const request = {
+    pageSize:props.pageSize, // 单页条数
+    nowPage:1, // 当前页
+    categoryId:props.categoryId as number | string, // 所属分类
+    searchTerm:props.searchTerm, // 搜索词条
 }
-const request:Request = {
-    pageSize:props.pageSize,
-    nowPage:1,
-    state:props.state,
-    categoryId:props.categoryId,
-    searchTerm:props.searchTerm,
-    isCount:true//true则获取count总数
-}
-/**  获取图库 */
-//图库列表
+// 图库列表数据
 const galleryList = ref<GalleryData[]>([])
 // 图库总数
 const count = ref<number>(0)
-//获取图库方法
-const fetchGallery = (isCount:boolean) =>{
-    if(isCount){ 
-        count.value = mkGallery.count 
+// 获取组件实例，用于全局消息提示
+const proxy: any = getCurrentInstance()?.proxy
+
+// 获取图库列表：查询当前页并同步总条数
+const fetchGallery = async ()=>{
+    try {
+        const data = await articleApi.list({ ...request, classify: 1 })
+        count.value = data.count
+        galleryList.value = data.list as GalleryData[]
+    } catch (error) {
+        galleryList.value = []
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '获取图库失败' })
     }
-    galleryList.value = mkGallery.list.slice(
-        (request.nowPage -1) * request.pageSize,
-        request.nowPage * request.pageSize
-    )
-}
-/**删除 */
-const deleteGallery = (id:number) => {
-    galleryList.value = galleryList.value.filter(obj => obj.id !== id)
 }
 
-/**翻页方法 */
+// 删除图库：删除成功后刷新列表
+const deleteGallery = async (id:number) => {
+    try {
+        await articleApi.delete(id)
+        await fetchGallery()
+        proxy.$message({ type: 'primary', message: '删除成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '删除失败' })
+    }
+}
+
+// 翻页方法
 const changePage = (page:number)=>{
     request.nowPage = page
-    fetchGallery(false)
+    fetchGallery()
 }
 
-//生命周期
-onMounted(()=>{
-    fetchGallery(true);
-})
+// 分类或搜索词变化时重新查询
+watch(
+    () => [props.categoryId, props.searchTerm],
+    () => {
+        request.categoryId = props.categoryId as number | string
+        request.searchTerm = props.searchTerm
+        request.nowPage = 1
+        fetchGallery()
+    },
+)
+
+// 生命周期：组件挂载后获取图库
+onMounted(fetchGallery)
 </script>
 
 <style lang="less" scoped>

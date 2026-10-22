@@ -1,51 +1,53 @@
+// [联调改造] 服务启动入口：先初始化 Sequelize，再监听端口；统一返回 JSON 错误。
 const express = require('express');
-const app = express();
 const path = require('path');
-const config = require('./config/default');
 const cors = require('cors');
-const bodyParser = require('body-parser')
-const jwt = require('./utils/jsonwebtoken')
+const config = require('./config/default');
+const initDatabase = require('./models/initDatabase');
 
-/**引入静态文件 */
-//设置静态目录
+const app = express();
+
+// 允许前端跨域访问接口
+app.use(cors());
+// 解析 JSON、表单和纯文本请求体
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.text({ type: 'text/plain', limit: '10mb' }));
+// 把本地文件目录开放为静态资源，例如 /files/a.png
+app.use('/files', express.static(path.join(__dirname, 'public/files')));
 app.use(express.static(path.join(__dirname, 'public')));
 
-/**设置跨域 */
-// 使用cors中间件,配置跨域，允许所有来源跨域
-app.use(cors());
+// 注册业务接口和文件上传接口
+app.use('/', require('./routes/index'));
+app.use('/', require('./routes/files'));
 
-/**解析前端数据 */
-//解析application/x-www-form-urlencoded数据格式
-app.use(bodyParser.urlencoded({extended:true}))
-//解析json数据格式
-app.use(bodyParser.json())
-//解析text/plain数据格式
-app.use(bodyParser.text())
-
-/**token处理（使用全局中间件） */
-app.use(async (req,res,next)=>{
-    //如果有token则验证，没有则直接放行
-    if(req.body.token !== undefined){
-        const token = req.body.token
-        const isPass = jwt.verifyToken(token)
-        if(isPass){
-            next();//验证通过
-        }else{
-            res.send({
-                code:401,
-                msg:"验证未通过"
-            })
-        }
-    }else{
-        next();//没有token，无需验证，直接放行
-    }
-})
-
-/**引入路由 */
-require('./routes/index')(app);
-/**引入文件上传（file） */
-require('./routes/files')(app);
-
-app.listen(config.port, () => {
-    console.log(`Example app listening on port ${config.port}`);
+// 未匹配到任何接口时返回 404
+app.use((req, res) => {
+    // 所有未匹配的地址统一返回 JSON，便于前端处理
+    res.status(404).send({ code: 404, msg: '接口不存在' });
 });
+
+// 统一错误处理中间件，避免错误信息直接暴露给前端
+app.use((error, req, res, next) => {
+    console.error(error);
+    if (res.headersSent) return next(error);
+    res.status(error.status || 500).send({
+        code: error.status || 500,
+        msg: error.status ? error.message : '服务器内部错误',
+    });
+});
+
+// 启动服务前先完成 Sequelize 初始化和演示数据检查
+async function start() {
+    await initDatabase();
+    app.listen(config.port, () => {
+        console.log(`Blog API listening on http://localhost:${config.port}`);
+    });
+}
+
+start().catch((error) => {
+    console.error('服务启动失败:', error);
+    process.exit(1);
+});
+
+module.exports = app;

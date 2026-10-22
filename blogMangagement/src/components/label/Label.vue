@@ -32,7 +32,7 @@
                 </yk-text>
             </yk-space>
             <yk-modal v-model="visible" title="管理标签">
-                <LabelMessage  :label="labelList"/>
+                <LabelMessage  :label="labelList" @changed="getLabel"/>
                 <template #footer>
                     <yk-button @click="showModal">确定</yk-button>
                 </template>
@@ -48,7 +48,7 @@
 </template>
 <script setup lang="ts">
 import { onMounted,ref,getCurrentInstance } from 'vue';
-import { mkLabel } from '../../mock/data';
+import { labelApi } from '../../api';
 import  LabelMessage  from './LabelMessage.vue'
 import type { LabelData } from '../../utils/interface.ts';
 
@@ -68,8 +68,13 @@ const showModal = () => {
  * @description 获取标签方法
  */
 const labelList = ref<LabelData[]>([])
-const getLabel = ()=>{
-    labelList.value = Array.from(mkLabel.data.list);
+const getLabel = async ()=>{
+    try {
+        // 选中标签 id 会传给文章列表做筛选
+        labelList.value = await labelApi.list()
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '获取标签失败' })
+    }
 }
 /**
  * @description 切换标签
@@ -87,17 +92,20 @@ const proxy: any = getCurrentInstance()?.proxy
 function cancel() {
     inputValue.value = ''
 }
-function confirm() {
+async function confirm() {
     if(inputValue.value){
-        //模拟数据
-        const obj = {
-            id:"-2",
-            name:inputValue.value,
-            value:0
+        try {
+            // 新建后重新拉取，保证标签 id 来自数据库
+            await labelApi.add({
+                name: String(inputValue.value),
+                moment: new Date().toISOString(),
+            })
+            await getLabel()
+            inputValue.value = ''
+            proxy.$message({ type: 'primary', message: '新建成功' })
+        } catch (error) {
+            proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '新建失败' })
         }
-        labelList.value.push(obj)
-        inputValue.value = ''
-        proxy.$message({ type: 'primary', message: '新建成功' })
     }else{
         proxy.$message({ type: 'primary', message: '请输入' })
     }

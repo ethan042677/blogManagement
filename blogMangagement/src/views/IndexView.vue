@@ -8,6 +8,7 @@
 </template>
 
 <script setup lang="ts">
+// 后台主布局左侧导航
 import LeftMenu from '../components/LeftMenu.vue';
 </script>
 
