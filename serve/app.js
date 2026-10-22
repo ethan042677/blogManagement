@@ -43,6 +43,8 @@ app.use(async (req,res,next)=>{
 
 /**引入路由 */
 require('./routes/index')(app);
+/**引入文件上传（file） */
+require('./routes/files')(app);
 
 app.listen(config.port, () => {
     console.log(`Example app listening on port ${config.port}`);

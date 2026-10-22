@@ -173,14 +173,118 @@ module.exports = function (app){
         }
     })
     //文件上传
-
+    app.post('/uploadFile',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.uploadFile(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
     //文件删除
-    
+    app.post('/deleteFile',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.deleteFile(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
     //移动文件
     app.post('/moveFile',(req,res)=>{
         //有token，经过全局token检查后再去删除文章
         if(req.body.token){
             serve.moveFile(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //获取日记
+    app.post('/diary',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.getDiaryPage(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //删除日记
+    app.post('/diary',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.deleteDiary(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //新建文章/图库
+    app.post('/createArticle',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.createArticle(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //获取文章/图库
+    app.post('/gainArticle',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.gainArticle(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //修改文章/图库
+    app.post('/updateArticle',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.updateArticle(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //新建日记
+    app.post('/createDiary',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.createDiary(req,res)
+        }else{
+            res.send({
+                code:300,
+                msg:"缺少token"
+            })
+        }
+    })
+    //获取总览数据
+    app.post('/overview',(req,res)=>{
+        //有token，经过全局token检查后再去删除文章
+        if(req.body.token){
+            serve.getOverview(req,res)
         }else{
             res.send({
                 code:300,

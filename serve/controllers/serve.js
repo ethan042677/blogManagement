@@ -1,5 +1,6 @@
 const dbModel = require('../models/db_model')
 const jwt = require('../utils/jsonwebtoken')
+const handleFile = require('../utils/handleFile')
 //常量映射
 const NO_QUERY = -1 
 //查看是否注册
@@ -93,7 +94,7 @@ exports.getComment = async (req,res)=>{
         const result = await dbModel.getCommentPage(data.pageSize,data.nowPage)
         //需要count，再去查count
         if(data.count){
-            const total = await dbModel.getCommentCount()
+            const total = await dbModel.getCommentCount(-1)
             count = total[0].count
         }
         //确保数据库里有东西，如果有再把需要的数据整理发送前端
@@ -163,6 +164,19 @@ exports.getArticle = async (req,res)=>{
         if(data.count){
             const total = await dbModel.getArticleCount()
             count = total[0].count
+        }
+        //确保数据库里有东西，如果有再把需要的数据整理发送前端
+        if(result.length > 0){
+            for(let i = 0;i<result.length;i++){
+                const praise = dbModel.getPraiseCount(result[i].id,-1)//点赞数
+                const comment = dbModel.getCommentCount(result[i].id)//评论条数
+                result[i].praise = praise[0].count
+                result[i].comment = comment[0].count
+                //分割标签
+                if(result[i].label){
+                    result[i].label = result[i].label.split(",")
+                }
+            }
         }
         res.send({
             code:200,
@@ -432,6 +446,7 @@ exports.getFilePage = async (req,res) =>{
         })
     }
 }
+
 //移动文件
 exports.moveFile = async (req,res) => {
     try {
@@ -446,6 +461,199 @@ exports.moveFile = async (req,res) => {
         res.status(500).send({
             code:500,
             msg:"移动文件失败"
+        })
+    }
+}
+
+//获取日记
+exports.getDiaryPage = async (req,res) => {
+    try {
+        const data = req.body
+        let count = NO_QUERY
+        const result = await dbModel.getDiaryPage(data.pageSize,data.nowPage,data.searchTerm)
+        //如果需要条数
+        if(data.count){
+            const total = await dbModel.getDiaryCount(data.searchTerm)
+            count = total[0].count
+        }
+        //确保数据库里有东西，如果有再把需要的数据整理发送前端
+        if(result.length > 0){
+            for(let i = 0;i<result.length;i++){
+                //如果有picture
+                if(result[i].picture){
+                    result[i].picture = result[i].picture.split(",")
+                }
+            }
+        }
+        res.send({
+            code:200,
+            data:{
+                count,
+                result
+            }
+        })
+    } catch (error) {
+        console.error("获取日记失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"获取日记失败"
+        })
+    }
+}
+//删除日记
+exports.deleteDiary = async (req,res) =>{
+    try {
+        const data = req.body
+        const result  = await dbModel.deleteDiary(data.diaryId)
+        res.send({
+            code:200,
+            msg:"日记删除成功"
+        })
+    } catch (error) {
+        console.error("日记删除失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"删除日记失败"
+        })
+    }
+}
+
+//新建文章/图库
+exports.createArticle = async (req,res) =>{
+    try {
+        const data = req.body
+        const result = dbModel.createArticle(data.value)
+        res.send({
+            code:200,
+            msg:"新建文章/图库成功"
+        })
+    } catch (error) {
+        console.error("新建文章/图库失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"新建文章/图库失败"
+        })
+    }
+}
+//获取文章/图库（用于修改）
+exports.gainArticle = async (req,res) =>{
+    try {
+        const data = req.body
+        const result = await dbModel.gainArticle(data.id)
+        res.send({
+            code:200,
+            data:result,
+            msg:"获取文章/图库成功"
+        })
+    } catch (error) {
+        console.error("获取文章/图库失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"获取文章/图库失败"
+        })
+    }
+}
+//修改文章/图库
+exports.updateArticle = async (req,res) =>{
+    try {
+        const data = req.body
+        const result = await dbModel.updateArticle(data.id,data.value)
+        res.send({
+            code:200,
+            msg:"修改文章/图库成功"
+        })
+    } catch (error) {
+        console.error("修改文章/图库失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"修改文章/图库失败"
+        })
+    }
+}
+
+//新建日记
+exports.createDiary = async (req,res) =>{
+    try {
+        const data = req.body
+        const result = dbModel.createDiary(data.value)
+        res.send({
+            code:200,
+            msg:"新建日记成功"
+        })
+    } catch (error) {
+        console.error("新建日记失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"新建日记失败"
+        })
+    }
+}
+
+//上传文件
+exports.uploadFile = async (data,res) =>{
+    try {
+        const result = dbModel.uploadFile(data)
+        //传回给前端的数据
+        const value = {
+            ...data,
+            ...{id:result.insertId}//id
+        }
+        res.send({
+            code:200,
+            data:value,
+            msg:"上传文件成功"
+        })
+    } catch (error) {
+        console.error("上传文件失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"上传文件失败"
+        })
+    }
+}
+//删除文件
+exports.deleteFile = async (req,res)=>{
+    try {
+        const data = req.body
+        const result = await dbModel.deleteFile(data.fileId)
+        //处理真实的文件删除
+        handleFile.deleteFiles(data.filesUrl)
+        res.send({
+            code:200,
+            msg:"文件删除成功"
+        })
+    } catch (error) {
+        console.error("删除文件失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"删除文件失败"
+        })
+    }
+}
+
+//获取总览数据
+exports.getOverview = async (req,res)=>{
+    try {
+        const article = await dbModel.getArticleCount(-1,-1,"",0)
+        const gallery = await dbModel.getArticleCount(-1,-1,"",1)
+        const diary = await dbModel.getDiaryCount("")
+        const files = handleFile.calculateFileSize("public/files")
+        const fileFormatSize = handleFile.formatSize(files)
+        const data = {
+            article:article[0].count,
+            gallery:gallery[0].count,
+            diary:diary[0].count,
+            file:fileFormatSize
+        }
+        res.send({
+            code:200,
+            data
+        })
+    } catch (error) {
+        console.error("获取总览数据失败",error)
+        res.status(500).send({
+            code:500,
+            msg:"获取总览数据失败"
         })
     }
 }
