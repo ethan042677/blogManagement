@@ -33,45 +33,104 @@
                 }"
             ></yk-text-area>
             <div class="diary-editor-form-picture">
-                <yk-upload
-                    :upload-url="submitUrl"
-                    :file-list="diaryFrom.picture"
-                    accept="image/*"
-                ></yk-upload>
+                <label class="picture-picker">
+                    <input type="file" accept="image/*" multiple @change="selectPictures">
+                    <IconPlusOutline /> 添加本地图片
+                </label>
+                <div class="picture-preview" v-if="previews.length">
+                    <img v-for="item in previews" :key="item" :src="item" alt="日记图片预览">
+                </div>
             </div>
         </div>
         <!-- 取消和新建笔记 -->
         <div class="diary-editor-footer">
             <yk-space size="s">
-                <yk-button type="secondary">取消</yk-button>
-                <yk-button>新建笔记</yk-button>
+                <yk-button type="secondary" @click="cancel">取消</yk-button>
+                <yk-button :disabled="submitting" @click="submit">{{ submitting ? '保存中...' : '新建笔记' }}</yk-button>
             </yk-space>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { ref,computed } from 'vue';
+import { ref,computed,getCurrentInstance,onBeforeUnmount } from 'vue';
 import { weatherList } from '../../utils/weather';
+import { diaryApi, fileApi } from '../../api';
 
 type DiaryForm = {
     title:string,
     weatherId:number,
     content:string,
-    picture?:string[]
 }
-//表单信息
+// 日记表单数据
 const diaryFrom = ref<DiaryForm>({title:'',weatherId:0,content:''})
-/**天气图标 */
+// 获取组件实例，用于全局消息提示
+const proxy:any = getCurrentInstance()?.proxy
+// 新建成功后通知父组件刷新列表
+const emits = defineEmits(['created'])
+// 已选择的本地图片
+const selectedFiles = ref<File[]>([])
+// 本地图片预览地址
+const previews = ref<string[]>([])
+// 是否正在提交
+const submitting = ref(false)
+
+// 根据当前天气 id 显示对应图标
 const weatherUrl = computed(()=>{
-    return `./src/assets/${weatherList[diaryFrom.value.weatherId].icon}`
+    return `./src/assets/${weatherList[diaryFrom.value.weatherId]?.icon || weatherList[0].icon}`
 })
-/**选择天气方法 */
+// 选择天气
 const selectWeather = (id:number)=>{
     diaryFrom.value.weatherId = id
 }
-/**上传地址 */
-const submitUrl = '/'
+
+// 选择本地图片并生成预览地址
+const selectPictures = (event: Event) => {
+    const input = event.target as HTMLInputElement
+    selectedFiles.value = Array.from(input.files || [])
+    previews.value.forEach((url) => URL.revokeObjectURL(url))
+    previews.value = selectedFiles.value.map((file) => URL.createObjectURL(file))
+}
+
+// 取消编辑：清空表单、文件和预览
+const cancel = () => {
+    diaryFrom.value = { title: '', weatherId: 0, content: '' }
+    selectedFiles.value = []
+    previews.value.forEach((url) => URL.revokeObjectURL(url))
+    previews.value = []
+}
+
+// 新建日记：先上传本地图片，再保存日记正文
+const submit = async () => {
+    if (!diaryFrom.value.title.trim()) {
+        proxy.$message({ type: 'warning', message: '请输入标题' })
+        return
+    }
+    submitting.value = true
+    try {
+        const uploaded = selectedFiles.value.length
+            ? await fileApi.upload(selectedFiles.value)
+            : []
+        await diaryApi.create({
+            ...diaryFrom.value,
+            title: diaryFrom.value.title.trim(),
+            picture: uploaded.map((file) => file.url),
+            moment: new Date().toISOString(),
+        })
+        cancel()
+        emits('created')
+        proxy.$message({ type: 'primary', message: '新建成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '新建失败' })
+    } finally {
+        submitting.value = false
+    }
+}
+
+// 组件卸载时释放图片预览地址
+onBeforeUnmount(() => {
+    previews.value.forEach((url) => URL.revokeObjectURL(url))
+})
 </script>
 
 <style lang="less" scoped>
@@ -139,6 +198,35 @@ const submitUrl = '/'
 </style>
 
 <style lang="less">
+.picture-picker {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: @pcolor-1;
+    color: @pcolor;
+    cursor: pointer;
+
+    input {
+        display: none;
+    }
+}
+
+.picture-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+
+    img {
+        width: 72px;
+        height: 72px;
+        border-radius: 8px;
+        object-fit: cover;
+    }
+}
+
 .diary-editor{
     .yk-text-area{
         background-color: transparent;

@@ -3,9 +3,9 @@ import HeaderNav from './components/HeaderNav.vue';
 </script>
 
 <template>
-  <!-- 头部 -->
+  <!-- 顶部导航栏 -->
   <HeaderNav />
-  <!-- 嵌套页面 -->
+  <!-- 路由页面内容 -->
   <router-view />
 </template>
 

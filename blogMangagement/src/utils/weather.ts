@@ -1,3 +1,4 @@
+// 日记页面可选择的天气列表
 export const weatherList = [
     {
         id:0,

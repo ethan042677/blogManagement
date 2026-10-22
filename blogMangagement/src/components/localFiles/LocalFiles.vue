@@ -1,20 +1,16 @@
 <template>
     <div class="files">
+        <input ref="fileInput" class="file-input" type="file" multiple @change="uploadFiles">
         <div class="files-tool" v-show="selectPhotoId.length > 0">
-            <!-- 左侧功能 -->
             <yk-space>
-                <!-- 全选框 -->
                 <yk-checkbox :checked="checkedAll" :indeterminate="indeterminate" @change="handleChangeAll">
                     全选
                 </yk-checkbox>
                 <yk-text>已选择 {{ selectPhotoId.length }} 项内容</yk-text>
-                <yk-text type="primary" style="cursor: pointer;"@click="cancelAll">取消选择</yk-text>
+                <yk-text type="primary" style="cursor: pointer;" @click="cancelAll">取消选择</yk-text>
             </yk-space>
-            <!-- 右侧功能 -->
             <yk-space>
-                <!-- 删除 -->
                 <IconDeleteOutline class="files-tool-delete" @click="deletePhotos"/>
-                <!-- 点击弹出的分组框 -->
                 <yk-popconfirm
                     title="选择分组"
                     @cancel="cancel"
@@ -23,200 +19,232 @@
                     trigger="click"
                 >
                     <IconSwitchOutline class="files-tool-switch"/>
-                    <!-- 内容插槽 -->
                     <template #content>
                         <yk-scrollbar ref="scrollbar" height="148px" class="category">
-                            <div 
+                            <div
                                 class="category-item"
-                                v-for="item in categoryStore.data" 
+                                v-for="item in categoryStore.data"
                                 :key="item.id"
                                 :class="{'category-selected':categorySeletedId === item.id}"
                                 @click="changeCategory(item.id)"
-                            >{{ item.name }} {{ item.value }}
-                            </div>
+                            >{{ item.name }} {{ item.value }}</div>
                         </yk-scrollbar>
                     </template>
                 </yk-popconfirm>
-                <!-- 切换 -->
             </yk-space>
         </div>
         <div class="files-main">
-            <LocalFilesPhoto 
-                v-for="item in files" 
-                :data="item" 
+            <LocalFilesPhoto
+                v-for="item in files"
+                :data="item"
                 :key="item.id"
                 @selectPhoto="selectPhoto"
                 @deletePhoto="deletePhoto"
                 @changeCategoryId="changeCategoryId"
             />
         </div>
-        <!-- 分页功能 -->
         <div class="comment-pagination">
-            <yk-pagination :total="count" :page-size="pageSize" size="m"  @change="changePage"/>
+            <yk-pagination :total="count" :page-size="pageSize" size="m" @change="changePage"/>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref,nextTick,onMounted,getCurrentInstance } from 'vue';
-import { mkFiles } from '../../mock/data';
+import { ref,nextTick,onMounted,getCurrentInstance,watch } from 'vue';
+import { fileApi } from '../../api';
 import LocalFilesPhoto from './LocalFilesPhoto.vue';
 import { useCategoryStore } from '../../store/category';
+import type { FileData } from '../../utils/interface';
 import './template.less'
 
-//拿到pinia中的分组
+// 拿到 Pinia 中的文件分类
 const categoryStore = useCategoryStore();
-//文件props接口
-type FileProps = {
-    pageSize:number,
-    categoryId:number|string,
-}
-const props = withDefaults(defineProps<FileProps>(),{
-    pageSize:8,
-    categoryId:-1,// 全部
+// 文件列表组件的父组件参数
+const props = withDefaults(defineProps<{
+    pageSize?:number,
+    categoryId?:number|string,
+}>(),{
+    pageSize:8, // 单页条数
+    categoryId:-1, // -1 表示全部文件
 })
-
-
-/**多选框部分 */
-const checkedAll = ref<boolean>(false)//全选
-const indeterminate = ref<boolean>(false)//半选
-const handleChangeAll = (val:boolean)=>{
-    indeterminate.value = false
-    //清空选择
-    if(val){
-        checkedAll.value = true
-        for(let i = 0;i<files.value.length;i++){
-            files.value[i].selected = true
-        }
-    }else{
-        checkedAll.value = false
-        selectPhotoId.value = []
-        for(let i = 0;i<files.value.length;i++){
-            files.value[i].selected = false
-        }
-    }
-}
-//取消选择
-const cancelAll = ()=>{
-    selectPhotoId.value = []
-    for(let i = 0;i<files.value.length;i++){
-        files.value[i].selected = false
-    }
-}
-/**  分类气泡框部分 */
-const categorySeletedId = ref<number|string>()
-//切换分组方法
-const changeCategory = (el:number|string)=>{
-    categorySeletedId.value = el
-}
-
+// 获取组件实例，用于全局消息提示
 const proxy: any = getCurrentInstance()?.proxy
-function cancel() {
-    proxy.$message({ type: 'warning', message: '你点击了取消按钮' })
-}
-function confirm() {
-    proxy.$message({ type: 'primary', message: '你点击了确认按钮' })
-}
-
-
-/** 分页部分 */
-const count = ref<number>(1234)
-//数据内容
-const files = ref()
+// 当前页文件数据
+const files = ref<FileData[]>([])
+// 文件总数
+const count = ref(0)
+// 隐藏的文件选择框
+const fileInput = ref<HTMLInputElement>()
+// 被选择文件的 id 数组
+const selectPhotoId = ref<number[]>([])
+// 是否全选
+const checkedAll = ref(false)
+// 是否处于半选状态
+const indeterminate = ref(false)
+// 批量移动时选中的目标分类
+const categorySeletedId = ref<number|string>()
 // 滚动条实例
 const scrollbar = ref()
-//请求接口
-type Request = {
-    token?:string,
-    pageSize:number,//单页条数
-    nowPage:number,//当前页
+// 当前文件列表请求参数
+const request = {
+    pageSize: props.pageSize, // 单页条数
+    nowPage: 1, // 当前页
+    categoryId: props.categoryId, // 所属分类
 }
-// 请求的数据
-const request:Request = {
-    pageSize:props.pageSize,
-    nowPage:1,
-}
-//获取数据方法
-const fetchFileData = (boo:boolean)=>{
-    const data = mkFiles
-    //控制值的获取
-    if(boo){
+
+// 获取文件列表：查询分页数据并清空上一次的选择状态
+const fetchFileData = async () => {
+    try {
+        const data = await fileApi.list(request)
         count.value = data.count
-    }
-    files.value = data.list.slice(
-        (request.nowPage -1) * request.pageSize,
-        (request.nowPage) * request.pageSize,
-    )
-    // 选择项：默认为未选择false()
-    for(let i = 0;i < files.value.length;i++){
-        files.value[i].selected = false
-    }
-}
-/**
- * @description 翻页方法
- */
-const changePage = (page:number)=>{
-    request.nowPage = page
-    fetchFileData(false)
-    // 翻页后滚动条回到最顶层
-    nextTick(()=>{
-        scrollbar.value?.scrollTo({ top: 0, behavior: 'smooth' })
-    })
-}
-/** 删除，转换分组，删除图片——组件方法 */
-//被选择图片的id数组
-const selectPhotoId = ref<number[]>([])
-//选择
-const selectPhoto = (id:number|string)=>{
-    for(let i = 0;i<files.value.length;i++){
-        if(files.value[i].id === id){
-            files.value[i].selected = !files.value[i].selected
-            //如果选中，则加入被选中图片的数组，如果没有选中，则从数组中移除
-            if(files.value[i].selected){
-                selectPhotoId.value.push(files.value[i].id)
-            }else{
-                selectPhotoId.value = selectPhotoId.value.filter(item => item !== id)
-                console.log(selectPhotoId.value);
-                
-            }
-            //全选与半选
-            if(selectPhotoId.value.length === 0){
-                indeterminate.value = false
-                checkedAll.value = false
-            }else if(selectPhotoId.value.length === files.value.length){
-                indeterminate.value = false
-                checkedAll.value = true
-            }else{
-                indeterminate.value = true
-                checkedAll.value = false
-            }
-        }
+        files.value = data.list.map((item) => ({ ...item, selected: false }))
+        selectPhotoId.value = []
+        checkedAll.value = false
+        indeterminate.value = false
+    } catch (error) {
+        files.value = []
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '获取文件失败' })
     }
 }
-//删除
-const deletePhoto = (id:number|string)=>{
-    files.value = files.value.filter((item:any) => item.id !== id)
-}
-//转换分组
-const changeCategoryId = (data:any)=>{
-    proxy.$message({ type: 'primary', message: `移动到${data.id}` })
-}
-/**删除选中全部按钮方法（区别于组件中的删除） */
-const deletePhotos = ()=>{
-    if(selectPhotoId.value.length !== 0){
-        for(let i = 0;i<selectPhotoId.value.length;i++){
-            files.value = files.value.filter((item:any) => item.id !== selectPhotoId.value[i])
-        }
+
+// 打开系统文件选择框
+const chooseFiles = () => fileInput.value?.click()
+
+// 上传文件：上传本地文件并刷新列表
+const uploadFiles = async (event: Event) => {
+    const input = event.target as HTMLInputElement
+    const selected = Array.from(input.files || [])
+    if (!selected.length) return
+    try {
+        const categoryId = typeof props.categoryId === 'number' ? props.categoryId : -1
+        await fileApi.upload(selected, categoryId)
+        await fetchFileData()
+        proxy.$message({ type: 'primary', message: '上传成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '上传失败' })
+    } finally {
+        input.value = ''
     }
-    //清除内容
+}
+
+// 全选或取消全选
+const handleChangeAll = (value:boolean) => {
+    checkedAll.value = value
+    indeterminate.value = false
+    files.value.forEach((item) => { item.selected = value })
+    selectPhotoId.value = value ? files.value.map((item) => item.id) : []
+}
+
+// 取消全部选择
+const cancelAll = () => {
     selectPhotoId.value = []
+    files.value.forEach((item) => { item.selected = false })
+    checkedAll.value = false
+    indeterminate.value = false
 }
-//生命周期
-onMounted(()=>{
-    fetchFileData(true)
-})
+
+// 选择单张文件，并更新全选、半选状态
+const selectPhoto = (id:number|string) => {
+    const file = files.value.find((item) => item.id === Number(id))
+    if (!file) return
+    file.selected = !file.selected
+    selectPhotoId.value = file.selected
+        ? [...new Set([...selectPhotoId.value, file.id])]
+        : selectPhotoId.value.filter((item) => item !== file.id)
+    indeterminate.value = selectPhotoId.value.length > 0 && selectPhotoId.value.length < files.value.length
+    checkedAll.value = selectPhotoId.value.length === files.value.length && files.value.length > 0
+}
+
+// 根据 id 获取文件地址并调用删除接口
+const deleteFilesByIds = async (ids:number[]) => {
+    const urls = files.value.filter((item) => ids.includes(item.id)).map((item) => item.url)
+    await fileApi.delete(ids, urls)
+}
+
+// 删除单个文件
+const deletePhoto = async (id:number|string) => {
+    try {
+        await deleteFilesByIds([Number(id)])
+        await fetchFileData()
+        proxy.$message({ type: 'primary', message: '删除成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '删除失败' })
+    }
+}
+
+// 移动单个文件到新分类
+const changeCategoryId = async (data:{ id:number; categoryId:number }) => {
+    try {
+        await fileApi.move(data.id, data.categoryId)
+        await fetchFileData()
+        proxy.$message({ type: 'primary', message: '移动成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '移动失败' })
+    }
+}
+
+// 批量删除已选择的文件
+const deletePhotos = async () => {
+    if (!selectPhotoId.value.length) return
+    try {
+        await deleteFilesByIds(selectPhotoId.value)
+        await fetchFileData()
+        proxy.$message({ type: 'primary', message: '删除成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '删除失败' })
+    }
+}
+
+// 选择批量移动的目标分类
+const changeCategory = (id:number|string) => {
+    categorySeletedId.value = id
+}
+
+// 取消批量移动
+function cancel() {
+    categorySeletedId.value = undefined
+}
+
+// 确认批量移动文件
+const confirm = async () => {
+    if (categorySeletedId.value === undefined || !selectPhotoId.value.length) return
+    try {
+        await fileApi.move(selectPhotoId.value, Number(categorySeletedId.value))
+        await fetchFileData()
+        proxy.$message({ type: 'primary', message: '移动成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '移动失败' })
+    }
+}
+
+// 翻页方法：请求新一页并让滚动条回到顶部
+const changePage = (page:number) => {
+    request.nowPage = page
+    fetchFileData()
+    nextTick(() => scrollbar.value?.scrollTo({ top: 0, behavior: 'smooth' }))
+}
+
+// 分类变化时回到第一页重新查询
+watch(
+    () => props.categoryId,
+    (value) => {
+        request.categoryId = value
+        request.nowPage = 1
+        fetchFileData()
+    },
+)
+
+// 暴露文件选择方法，供页面上传按钮调用
+defineExpose({ chooseFiles })
+// 生命周期：组件挂载后获取文件列表
+onMounted(fetchFileData)
 </script>
-<style scoped lang="less"> 
+
+<style scoped lang="less">
+.file-input {
+    display: none;
+}
+
 .files{
     background: @bg-color-l;
     padding: @space-xl;
@@ -236,12 +264,8 @@ onMounted(()=>{
             height: 20px;
             color: @font-color-s;
             cursor: pointer;
-
-            &:hover{
-                color: @font-color-l;
-            }
+            &:hover{ color: @font-color-l; }
         }
-        
     }
 
     &-main{
@@ -254,7 +278,6 @@ onMounted(()=>{
     }
     .comment-pagination{
         flex-shrink: 0;
-        // 抵消卡片左右内边距，让分页条通栏贴在底部
         margin: 0 -@space-xl;
         padding: @space-l 0 0;
         display: flex;
@@ -264,5 +287,4 @@ onMounted(()=>{
         background: @white;
     }
 }
-
 </style>

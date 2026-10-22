@@ -21,8 +21,9 @@
 <script lang="ts" setup>
 import { ref,onMounted,getCurrentInstance,nextTick } from 'vue';
 import Reply from '../reply/Reply.vue'
-import {mkComment} from "../../mock/data.ts"
+import { replyApi } from '../../api';
 import type { CommentProps } from './reply.ts';
+import type { ReplyData } from '../../utils/interface';
 
 //通过getCurrentInstance()方法拿到组件实例，proxy是其一个属性
 const proxy:any = getCurrentInstance()?.proxy
@@ -30,42 +31,45 @@ const props = withDefaults(defineProps<CommentProps>(),{
     pageSize:8,
 })
 //评论条数
-const count = ref<number>(1234)
+const count = ref<number>(0)
 //评论数据内容
-const comments = ref()
+const comments = ref<ReplyData[]>([])
 // 滚动条实例
 const scrollbar = ref()
 
 //请求类型
 type Request = {
-    token?:string,
     pageSize:number,//单页条数
     nowPage:number,//当前页
 }
 
 const request:Request = {
-    pageSize:props.pageSize,
-    nowPage:1,
+    pageSize:props.pageSize, // 单页条数
+    nowPage:1, // 当前页
 }
 //获取数据方法
 const fetchCommentData = async ()=>{
     try {
-        const data = await mkComment.data
+        // [联调接入] 评论列表改为真实接口。
+        const data = await replyApi.comments(request)
         count.value = data.count
-        comments.value = data.list.slice(
-            (request.nowPage -1) * request.pageSize,
-            (request.nowPage) * request.pageSize,
-        )
+        comments.value = data.list
     } catch (error) {
-        console.error("获取评论数据失败")
+        comments.value = []
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '获取评论数据失败' })
     }
 }
 /**
  * @description 删除评论
  */
-const deleteComment = (id:number)=>{
-    comments.value = comments.value.filter((el:any)=>el.id!==id)
-    proxy.$message({ type: 'primary', message: '删除评论' })
+const deleteComment = async (id:number)=>{
+    try {
+        await replyApi.deleteComment(id)
+        await fetchCommentData()
+        proxy.$message({ type: 'primary', message: '删除评论成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '删除失败' })
+    }
 }
 /**
  * @description 翻页方法

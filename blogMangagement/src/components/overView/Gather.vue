@@ -17,20 +17,20 @@
 
 <script setup lang="ts">
 import { overLinks } from '../../utils/menu';
-import { overViewData } from '../../mock/data';
 import { ref,onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { overviewApi } from '../../api';
 
-// 路由
+// 路由实例，用于跳转到对应管理页面
 const router = useRouter();
-/** 卡片渲染的数据 */
+/** 四个总览卡片渲染的数据 */
 const gathers = ref(overLinks)
-//模拟获取数据
+// 获取总览数据并填入四个卡片
 const fetchGatherData = async ()=>{
     try {
-        const data = await overViewData.data
+        const data = await overviewApi.get()
         //渲染数据
-        const keys = ['file', 'article', 'gallery', 'diary']
+        const keys: (keyof typeof data)[] = ['file', 'article', 'gallery', 'diary']
         gathers.value.forEach((el, index) => {
             el.total = data[keys[index]]
         })

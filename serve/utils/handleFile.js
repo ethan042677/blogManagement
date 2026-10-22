@@ -1,80 +1,61 @@
-const fs = require('fs')
+// [联调改造] 文件删除改为基于上传目录的异步安全实现，避免路径穿越和异步异常崩溃。
+const fs = require('fs');
 const path = require('path');
 
-exports.deleteFiles = function (url) {
-    if (typeof url === 'string') {
-        //删除单文件
-        fs.unlink(`public/files/${url}`, (err) => {
-            if (err) throw err;
-            console.log("文件已删除")
-        })
-    } else {
-        //多个文件
-        url.map(val => {
-            fs.unlink(`public/files/${val}`, (err) => {
-                if (err) throw err;
-                console.log("文件已删除")
-            })
-        })
+const uploadDirectory = path.resolve(__dirname, '../public/files');
+
+const resolveLocalFile = (url) => {
+    // 只取文件名并校验最终路径，阻止 ../ 路径穿越
+    const fileName = path.basename(String(url).replace(/^\/files\//, ''));
+    const target = path.resolve(uploadDirectory, fileName);
+    if (!target.startsWith(`${uploadDirectory}${path.sep}`)) {
+        throw new Error('非法的文件路径');
     }
-}
+    return target;
+};
 
-/**
- * 异步计算文件夹总大小（并发递归）
- * @param {string} pathUrl - 文件夹路径
- * @returns {Promise<number>} 总字节数
- */
-exports.calculateFileSize = async function (pathUrl) {
-    /**
-     * 内部递归函数
-     * @param {string} dirPath - 当前要遍历的目录路径
-     */
-    async function getFolderSize(dirPath) {
-        let totalSize = 0;
-        let entries = [];
-
-        // 容错：读取目录时可能会遇到权限不足等问题，直接返回 0 跳过
+// 删除本地文件：支持传入单个地址或地址数组
+exports.deleteFiles = async (urls) => {
+    const list = Array.isArray(urls) ? urls : [urls];
+    await Promise.all(list.map(async (url) => {
+        // 文件已不存在时视为删除成功，避免重复操作报错
+        if (!url) return;
         try {
-            entries = await fs.readdir(dirPath, { withFileTypes: true });
-        } catch (err) {
+            await fs.promises.unlink(resolveLocalFile(url));
+        } catch (error) {
+            if (error.code !== 'ENOENT') console.error('文件删除失败:', error.message);
+        }
+    }));
+};
+
+// 递归计算文件夹大小，用于总览页本地文件容量
+exports.calculateFileSize = async (pathUrl) => {
+    const getFolderSize = async (dirPath) => {
+        let entries;
+        try {
+            entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+        } catch {
             return 0;
         }
-
-        // 把每个条目映射成 Promise，用 Promise.all 并发等待
-        const results = await Promise.all(
-            entries.map(async (entry) => {
-                const fullPath = path.join(dirPath, entry.name);
-
-                try {
-                    if (entry.isDirectory()) {
-                        // 子目录：递归，返回其大小
-                        return await getFolderSize(fullPath);
-                    } else if (entry.isFile()) {
-                        // 普通文件：返回文件大小
-                        const stats = await fs.stat(fullPath);
-                        return stats.size;
-                    }
-                    // 其他类型（符号链接等）：不计入，返回 0
-                    return 0;
-                } catch (err) {
-                    // 容错：如果某个具体文件 stat 失败（比如刚好被删除），跳过该文件
-                    return 0;
-                }
-            })
-        );
-
-        // 将当前目录下所有子项的大小累加
-        totalSize = results.reduce((acc, size) => acc + size, 0);
-        return totalSize;
-    }
-
-    // 调用内部函数，返回字节数
-    return await getFolderSize(pathUrl);
+        const sizes = await Promise.all(entries.map(async (entry) => {
+            const fullPath = path.join(dirPath, entry.name);
+            try {
+                if (entry.isDirectory()) return getFolderSize(fullPath);
+                if (entry.isFile()) return (await fs.promises.stat(fullPath)).size;
+                return 0;
+            } catch {
+                return 0;
+            }
+        }));
+        return sizes.reduce((total, size) => total + size, 0);
+    };
+    return getFolderSize(pathUrl);
 };
-//换算文件大小
-exports.formatSize = function (bytes) {
+
+// 把字节数转换为 B、KB、MB、GB 等易读格式
+exports.formatSize = (bytes) => {
     if (bytes === 0) return '0 B';
-    const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + units[i];
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+    return `${(bytes / (1024 ** index)).toFixed(2)} ${units[index]}`;
 };

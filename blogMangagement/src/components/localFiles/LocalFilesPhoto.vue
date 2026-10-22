@@ -42,8 +42,9 @@
 </template>
 <script lang="ts" setup>
 import { type FileData } from '../../utils/interface';
-import { onMounted,computed,ref,getCurrentInstance } from 'vue';
+import { computed,ref } from 'vue';
 import { useCategoryStore } from '../../store/category';
+import { resolveAssetUrl } from '../../utils/request';
 import './template.less'
 
 //拿到pinia中的分组
@@ -58,31 +59,30 @@ const props = withDefaults(defineProps<FilePhotoProps>(),{
 
 })
 
-//图片路径
+//把后端返回的本地文件地址转换为可访问图片地址
 const photoUrl = computed(()=>{
-    return `/src/assets/images/${props.data?.url}`
+    return resolveAssetUrl(props.data?.url)
 })
 
 /**  分类气泡框部分 */
 const emits = defineEmits(['changeCategoryId','deletePhoto','selectPhoto'])
+// 当前文件选中的目标分类
 const categorySeletedId = ref<number|string>(props.data?.categoryId!)
 //切换分组方法
 const changeCategory = (el:number|string)=>{
     categorySeletedId.value = el
 }
 
-const proxy: any = getCurrentInstance()?.proxy
 //点击确认方法
 function confirm() {
-    //如果与之前的分类选项不同
+    // 只有分类变化时才通知父组件发起移动请求
     if(categorySeletedId.value!=props.data?.categoryId){
-        //如果修改分组，则交给父级
+        // 实际移动和刷新由父组件处理
         const data = {
             id:props.data?.id,
-            categoryId:props.data?.categoryId
+            categoryId:Number(categorySeletedId.value)
         }
         emits('changeCategoryId',data)
-        proxy.$message({ type: 'primary', message: '修改完成' })
     }
 }
 //删除方法
@@ -91,13 +91,10 @@ const deletePhoto = ()=>{
 }
 //选择方法
 const checkPhoto = ()=>{
+    // 勾选状态由文件列表统一维护
     emits('selectPhoto',props.data?.id)
 }
 
-//生命周期
-onMounted(()=>{
-
-})
 </script>
 
 <style lang="less" scoped>

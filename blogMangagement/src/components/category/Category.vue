@@ -6,7 +6,7 @@
                 全部 {{ categoryStore.count }}
             </div>
             <!-- 分组：文章发布状态 -->
-            <div class="category-menu" v-for="item in articleState.data" :key="item.id" :class="{'category-menu-selected':selected==item.id +'articleState'}" @click="changeCategory(item.id,'articleState')">
+            <div v-if="classify === 0" class="category-menu" v-for="item in articleState" :key="item.id" :class="{'category-menu-selected':selected==item.id +'articleState'}" @click="changeCategory(item.id,'articleState')">
                 {{ item.name }} {{ item.value }}
             </div>
             <!-- 未分类 -->
@@ -48,7 +48,7 @@
             </yk-text>
         </yk-space>
         <yk-modal v-model="visible" title="管理分组">
-            <CategoryMessage />
+            <CategoryMessage @changed="getCategory" />
             <template #footer>
                 <yk-button @click="showModal">确定</yk-button>
             </template>
@@ -57,10 +57,15 @@
 </template>
 <script setup lang="ts">
 import { onMounted,ref,getCurrentInstance } from 'vue';
-import { category,articleState } from '../../mock/data';
+import { articleApi, categoryApi } from '../../api';
 import { useCategoryStore } from '../../store/category';
 import  CategoryMessage  from './CategoryMessage.vue'
 
+// [联调新增] 文章、图库、文件页面复用该组件，通过 classify 拉取对应分类。
+const props = withDefaults(defineProps<{ classify?: number }>(), {
+    classify: 0,
+})
+const articleState = ref<{ id:number; name:string; value:number }[]>([])
 //store
 const categoryStore = useCategoryStore();
 //变量
@@ -78,14 +83,25 @@ const showModal = () => {
 /**
  * @description 获取分组方法
  */
-const getCategory = ()=>{
-    categoryStore.data = category.data.list;
-    categoryStore.count = category.data.count;
+const getCategory = async ()=>{
+    try {
+        // 分类数量与文章状态统计互不依赖，并行请求
+        const requests:any[] = [categoryApi.list(props.classify)]
+        if (props.classify === 0) requests.push(articleApi.stateCounts())
+        const [categoryData, stateData] = await Promise.all(requests)
+        categoryStore.data = categoryData.list
+        categoryStore.count = categoryData.count
+        articleState.value = stateData || []
+    } catch (error) {
+        articleState.value = []
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '获取分类失败' })
+    }
 }
 /**
  * @description 切换分组
  */
 const changeCategory = (id:string|number,type:string)=>{
+    // type 区分全部、发布状态、未分类和普通分类
     if(id+type != selected.value){
         selected.value = id+type
         emits('nowCategory',{id,type})
@@ -98,17 +114,21 @@ const proxy: any = getCurrentInstance()?.proxy
 function cancel() {
     inputValue.value = ''
 }
-function confirm() {
+async function confirm() {
     if(inputValue.value){
-        //模拟数据
-        const obj = {
-            id:"-2",
-            name:inputValue.value,
-            value:0
+        try {
+            // 新建后重新获取数量，确保顶部统计同步
+            await categoryApi.add({
+                name: String(inputValue.value),
+                classify: props.classify,
+                moment: new Date().toISOString(),
+            })
+            await getCategory()
+            inputValue.value = ''
+            proxy.$message({ type: 'primary', message: '插入成功' })
+        } catch (error) {
+            proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '新建失败' })
         }
-        categoryStore.data.push(obj)
-        inputValue.value = ''
-        proxy.$message({ type: 'primary', message: '插入成功' })
     }else{
         proxy.$message({ type: 'primary', message: '请输入' })
     }

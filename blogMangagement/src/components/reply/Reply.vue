@@ -1,8 +1,6 @@
 <template>
     <yk-space size="m" class="reply">
-        <yk-avatar v-if="isComment"
-            img-url="https://www.huohuo90.com:3003/user/6353b034dd4b583975e77fbe.png"
-        ></yk-avatar>
+        <yk-avatar v-if="isComment" :img-url="avatarUrl"></yk-avatar>
         <yk-space dir="vertical" size="s" class="reply-main">
             <div class="reply-name">
                 <!-- 姓名 -->
@@ -25,6 +23,7 @@
 
 <script lang="ts" setup>
 import { type ReplyProps } from './reply';
+import avatarUrl from '../../assets/vite.svg';
 
 const props = withDefaults(defineProps<ReplyProps>(),{
     isComment:true,

@@ -72,6 +72,7 @@
 import { computed,getCurrentInstance } from 'vue';
 import type { ArticleData } from '../../utils/interface';
 import { useCategoryStore } from '../../store/category';
+import { resolveAssetUrl } from '../../utils/request';
 
 const CategoryStore = useCategoryStore()
 
@@ -86,11 +87,11 @@ const emits = defineEmits(['deleteArticle','updateState'])
 
 /** 图片url*/
 const coverUrl = computed(()=>{
-    return `./src/assets/images/${props.data?.cover}`
+    return resolveAssetUrl(props.data?.cover)
 })
 /**截取时间 */
 const resultTime = computed(()=>{
-    //只保留年月日
+    // 只保留年月日，避免列表时间过长
     return props.data?.moment.substring(0,10)
 })
 
@@ -100,11 +101,12 @@ function cancel() {
     proxy.$message({ type: 'warning', message: '取消删除' })
 }
 function deleteArticle(id:number) {
+    // 弹窗只负责确认，真正删除由父组件调用接口
     emits("deleteArticle",id)
-    proxy.$message({ type: 'primary', message: '删除成功' })
 }
 /** 修改状态 */
 const updateState = (id:number,state:number)=>{
+    // 发布/撤回由父组件请求接口后刷新列表
     emits("updateState",{id,state})
 }
 </script>

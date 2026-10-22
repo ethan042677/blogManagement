@@ -30,27 +30,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, watch } from 'vue'
 import LineChart from '../echarts/LineChart.vue'
 import PieChart from '../echarts/PieChart.vue'
-import { visitsData, monitorData } from '../../mock/data'
+import { overviewApi } from '../../api'
 
-// 访问量
+// 访问量时间范围
 const visitRadio = ref('week')
+// 当前访问量折线图数据
+const visitChartData = ref<{ date:string; count:number }[]>([])
 
-// 根据选中的时间范围过滤访问量数据（取最近7天或30天）
-const visitChartData = computed(() => {
-    const days = visitRadio.value === 'week' ? 7 : 30
-    return visitsData.data.slice(-days)
-})
-
-// 数据监测
+// 数据监测时间范围
 const monitorRadio = ref('week')
-
-// 数据监测饼图数据（week/month 可用于未来扩展，目前使用同一份 mock 数据）
-const monitorChartData = computed(() => {
-    return monitorData.data
+// 当前设备分布和网站内容分布
+const monitorChartData = ref({
+    device: [] as { key:string; name:string; value:number }[],
+    website: [] as { key:string; name:string; value:number }[],
 })
+
+// 切换周/月时同时刷新访问量和数据监测
+watch([visitRadio, monitorRadio], async () => {
+    try {
+        const [visits, survey] = await Promise.all([
+            overviewApi.visits(visitRadio.value === 'week' ? 7 : 30),
+            overviewApi.survey(monitorRadio.value === 'week' ? 7 : 30),
+        ])
+        visitChartData.value = visits
+        monitorChartData.value = survey
+    } catch (error) {
+        console.error('获取统计数据失败', error)
+    }
+}, { immediate: true })
 </script>
 
 <style scoped lang="less">

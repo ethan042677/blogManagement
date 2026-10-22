@@ -15,13 +15,13 @@
                 </div>
                 <yk-space :size="2">
                     <div class="gallery-item-image-left imgs">
-                        <yk-image :src="'./src/assets/images/'+ props.data?.content[0]" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content ![0]"/>
+                        <yk-image :src="resolveAssetUrl(props.data?.content?.[0])" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content?.[0]"/>
                     </div>
                     <div class="gallery-item-image-middle imgs">
-                        <yk-image :src="'./src/assets/images/'+ props.data?.content[1]" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content ! [1]"/>
+                        <yk-image :src="resolveAssetUrl(props.data?.content?.[1])" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content?.[1]"/>
                     </div>
                     <div class="gallery-item-image-right imgs">
-                        <yk-image :src="'./src/assets/images/'+ props.data?.content[2]" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content ! [2]"/>
+                        <yk-image :src="resolveAssetUrl(props.data?.content?.[2])" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content?.[2]"/>
                     </div>
                 </yk-space>
                 <!-- 撤回（右边） -->
@@ -66,6 +66,7 @@
 <script lang="ts" setup>
 import { computed,getCurrentInstance } from 'vue';
 import type { GalleryData } from '../../utils/interface';
+import { resolveAssetUrl } from '../../utils/request';
 
 
 /**拿到父级传的数据 */
@@ -78,11 +79,11 @@ const emits = defineEmits(['deleteGallery'])
 
 /** 图片url*/
 const coverUrl = computed(()=>{
-    return `./src/assets/images/${props.data?.cover}`
+    return resolveAssetUrl(props.data?.cover)
 })
 /**截取时间 */
 const resultTime = computed(()=>{
-    //只保留年月日
+    // 只保留年月日
     return props.data?.moment.substring(0,10)
 })
 
@@ -92,8 +93,8 @@ function cancel() {
     proxy.$message({ type: 'warning', message: '取消删除' })
 }
 function deleteGallery(id:number) {
+    // 弹窗确认后交给父组件删除并刷新
     emits("deleteGallery",id)
-    proxy.$message({ type: 'primary', message: '删除成功' })
 }
 </script>
 

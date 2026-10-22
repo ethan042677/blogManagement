@@ -37,7 +37,6 @@ declare module 'vue' {
     IconSendOutline: typeof import('@yike-design/ui/es/components/svg-icon')['IconSendOutline']
     IconSettingsOutline: typeof import('@yike-design/ui/es/components/svg-icon')['IconSettingsOutline']
     IconStarFill: typeof import('@yike-design/ui/es/components/svg-icon')['IconStarFill']
-    IconStarOutline: typeof import('@yike-design/ui/es/components/svg-icon')['IconStarOutline']
     IconSwitchOutline: typeof import('@yike-design/ui/es/components/svg-icon')['IconSwitchOutline']
     IconTickMinOutline: typeof import('@yike-design/ui/es/components/svg-icon')['IconTickMinOutline']
     ItemTop: typeof import('./src/components/ItemTop.vue')['default']
@@ -79,6 +78,5 @@ declare module 'vue' {
     YkTheme: typeof import('@yike-design/ui/es')['YkTheme']
     YkTitle: typeof import('@yike-design/ui/es')['YkTitle']
     YkTooltip: typeof import('@yike-design/ui/es')['YkTooltip']
-    YkUpload: typeof import('@yike-design/ui/es')['YkUpload']
   }
 }

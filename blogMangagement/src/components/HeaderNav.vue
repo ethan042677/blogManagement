@@ -10,10 +10,10 @@
                 <IconMailOutline style="font-size: 20px;" @click="changeMessage(true)" />
             </yk-badge>
             <!--头像 -->
-            <yk-avatar img-url="https://www.huohuo90.com:3003/user/6353b034dd4b583975e77fbe.png"></yk-avatar>
+            <yk-avatar :img-url="avatarUrl"></yk-avatar>
             <!-- 暗黑模式 -->
             <div><yk-theme /></div>
-            <yk-button>退出</yk-button>
+            <yk-button @click="logout">退出</yk-button>
         </yk-space>
         <Message :active="active" @close="changeMessage(false)"/>
     </div>
@@ -23,16 +23,27 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import Message from './reply/Message.vue';
-//router:返回总览页面
+import { useAuthStore } from '../store/auth';
+import avatarUrl from '../assets/vite.svg';
+//路由实例：返回总览页面和退出后跳转
 const router = useRouter();
+// 登录状态
+const auth = useAuthStore();
+// 点击品牌区域返回总览页
 const backHome = ()=>{
     router.push('/');
 }
 
-//控制私信弹出
+//控制私信抽屉弹出
 const active = ref<boolean>(false)
+// 打开或关闭私信抽屉
 const changeMessage = (boo:boolean)=>{
     active.value = boo;
+}
+// 退出登录并清除本地 token
+const logout = async () => {
+    auth.logout()
+    await router.replace('/login')
 }
 </script>
 

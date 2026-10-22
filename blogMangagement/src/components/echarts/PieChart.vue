@@ -189,6 +189,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    // 两个饼图实例都需要释放
     window.removeEventListener('resize', handleResize)
     deviceChartInstance?.dispose()
     websiteChartInstance?.dispose()

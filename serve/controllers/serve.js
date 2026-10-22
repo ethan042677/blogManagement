@@ -1,659 +1,275 @@
-const dbModel = require('../models/db_model')
-const jwt = require('../utils/jsonwebtoken')
-const handleFile = require('../utils/handleFile')
-//常量映射
-const NO_QUERY = -1 
-//查看是否注册
-exports.isRegister = async (req,res) =>{
-    try {
-        //查询数据库是否有注册用户
-        const result = await dbModel.isRegister();
-        const isRegistered = result[0].count > 0;
-        res.send({
-            code:200,
-            isRegistered:isRegistered,
-            msg:isRegistered ? "已注册" : "未注册"
-        })
-    } catch (error) {
-        console.error(error);
-        res.status(500).send({ code: 500, msg: '数据库查询失败' });
-    }
+// [联调改造] 控制器只负责参数整理和响应，数据库操作全部交给 Sequelize 数据层。
+const path = require('path');
+const dbModel = require('../models/db_model');
+const jwt = require('../utils/jsonwebtoken');
+const handleFile = require('../utils/handleFile');
 
-}
-//管理员注册
-exports.register = async (req,res)=>{
-    try {
-        const data = req.body;
-        //如果注册时提交的姓名或者密码为空
-        if(!data.name || !data.password){
-            return res.status(400).send({
-                code:400,
-                msg:"账号密码不能为空"
-            })
-        }
-        //如果前端没有返回时间，就自动生成一个时间
-        if(!data.moment){
-            data.moment = new Date().toISOString();
-        }
-        await dbModel.register(data)
-        res.send({ 
-            code: 200, 
-            msg: '注册成功' 
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send({ 
-            code: 500, 
-            msg: '注册失败' 
-        });
-    }
-}
-//管理员登录
-exports.adminSignin = async (req,res)=>{
-    try {
-        const data = req.body
-        //提交的名称或者密码不合法直接400
-        if(!data.name || !data.password){
-            return res.status(400).send({
-                code:400,
-                msg:"账号密码不能为空"
-            })
-        }
-        const result = await dbModel.adminSignin(data.name)
-        //账号不存在或者密码错误直接401
-        if(result.length === 0 || data.password !== result[0].password){
-            return res.status(401).send({
-                code:401,
-                msg:"账号或者密码错误"
-            })
-        }
-        //登录成功，生成token,
-        const token = jwt.generateToken(data.name)
-        const adminData = {
-            ...result[0],
-            ...{token}
-        }
-        res.send({
-            code:200,
-            msg:"登录成功",
-            data:adminData
-        })
-    } catch (error) {
-        console.error("登录失败")
-        res.status(500).send({ 
-            code: 500, 
-            msg: '登录失败' 
-        });
-    }
-}
-//获取评论
-exports.getComment = async (req,res)=>{
-    try {
-        const data = req.body;
-        let count = NO_QUERY;//未查询
-        const result = await dbModel.getCommentPage(data.pageSize,data.nowPage)
-        //需要count，再去查count
-        if(data.count){
-            const total = await dbModel.getCommentCount(-1)
-            count = total[0].count
-        }
-        //确保数据库里有东西，如果有再把需要的数据整理发送前端
-        if(result.length > 0){
-            for(let i = 0;i<result.length;i++){
-                const articleTitle = await dbModel.getArticleTitle(result[i].article_id)
-                result[i].article = {
-                    id:result[i].article_id,
-                    title:articleTitle[0].title
-                }
-            }
-        } 
-        res.send({
-            code:200,
-            data:{
-                count,
-                result
-            }
-        })
-    } catch (error) {
-        console.error("获取评论失败:", error)
-        res.status(500).send({
-            code:500,
-            msg:"获取评论失败"
-        })
-    }
-}
-//获取私信
-exports.getMessage = async (req,res)=>{
-    try {
-        const data = req.body;
-        let count = NO_QUERY;//未查询
-        const result = await dbModel.getMessagePage(data.pageSize,data.nowPage)
-        //需要count，再去查count
-        if(data.count){
-            const total = await dbModel.getMessageCount()
-            count = total[0].count
-        }
-        //将私信变为已读
-        if(result.length > 0){
-            for(let i = 0;i < result.length;i++){
-                await dbModel.updateMessageRead(result[i].id)
-            }
-        }
-        res.send({
-            code:200,
-            data:{
-                count,
-                result
-            }
-        })
-    } catch (error) {
-        console.error("获取私信失败:", error)
-        res.status(500).send({
-            code:500,
-            msg:"获取私信失败"
-        })
-    }
-}
-//获取文章
-exports.getArticle = async (req,res)=>{
-    try {
-        const data = req.body;
-        let count = NO_QUERY;//未查询
-        const result = await dbModel.getArticlePage(data.pageSize,data.nowPage,data.state,data.categoryId,data.searchTerm,data.classify)
-        //需要count，再去查count
-        if(data.count){
-            const total = await dbModel.getArticleCount()
-            count = total[0].count
-        }
-        //确保数据库里有东西，如果有再把需要的数据整理发送前端
-        if(result.length > 0){
-            for(let i = 0;i<result.length;i++){
-                const praise = dbModel.getPraiseCount(result[i].id,-1)//点赞数
-                const comment = dbModel.getCommentCount(result[i].id)//评论条数
-                result[i].praise = praise[0].count
-                result[i].comment = comment[0].count
-                //分割标签
-                if(result[i].label){
-                    result[i].label = result[i].label.split(",")
-                }
-            }
-        }
-        res.send({
-            code:200,
-            data:{
-                count,
-                result
-            }
-        })
-    } catch (error) {
-        console.error("获取私信失败:", error)
-        res.status(500).send({
-            code:500,
-            msg:"获取私信失败"
-        })
-    }
-}
-//修改文章状态
-exports.changeArticleState = async (req,res) => {
-    try {
-        const data = req.body
-        const result = await dbModel.changeArticleState(data.id,data.state)
-        res.send({
-            code:200,
-            msg:"文章状态修改成功"
-        })
-    } catch (error) {
-        console.error("文章状态修改失败：",error)
-        res.status(500).send({
-            code:500,
-            msg:"修改文章状态失败"
-        })
-    }
-}
-//删除文章
-exports.deleteArticle = async (req,res) =>{
-    try {
-        const data = req.body
-        const result  = await dbModel.deleteArticle(data.id)
-        res.send({
-            code:200,
-            msg:"文章删除成功"
-        })
-    } catch (error) {
-        console.error("文章删除失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"删除文章失败"
-        })
-    }
-}
-//查询文章不同状态总数
-exports.getArticleStateCount = async (req,res)=>{
-    try {
-        const data = req.body
-        //未发布总数
-        const unpublishState = await dbModel.getArticleCount(0,-1,'',0)
-        //已发布总数
-        const publishState = await dbModel.getArticleCount(1,-1,'',0)
-        const result = [
-            {
-                id:0,//未发布
-                value:unpublishState[0].count
-            },{
-                id:1,//已发布
-                value:publishState[0].count
-            }
-        ]
-        res.send({
-            code:200,
-            data:result
-        })
-    } catch (error) {
-        console.error("文章不同状态数量查询失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"文章不同状态数量查询失败"
-        })
-    }
-}
+// 统一成功响应格式，保证每个接口都返回 code、msg 和 data
+const success = (res, data, msg = '操作成功') => res.send({ code: 200, msg, data });
 
-//获取分类
-exports.getCategory = async (req,res) =>{
-    try {
-        const data = req.body
-        const result = await dbModel.getCategory(data.classify)
-        //如果是文章或者图片
-        if(data.classify === 0 || data.classify === 1){
-            //总条数
-            const count = await dbModel.getArticleCount(-1,-1,"",data.classify)
-            //返回的数据
-            const list  = []
-            if(result.length > 0){
-                for(let i = 0;i<result.length;i++){
-                    // 每个标签下的条数
-                    const value = await dbModel.getArticleCount(-1,result[i].id,"",data.classify) 
-                    list[i] = {
-                        id:result[i].id,
-                        name:result[i].category_name,
-                        value:value[0].count
-                    }
-                }
-            }
-            res.send({
-                code:200,
-                data:{
-                    count:count[0].count,
-                    list
-                }
-            })
-        }else if(data.classify === 2){
-            //查文件
-            //总条数
-            const count = await dbModel.getFileCount(-1)
-            //返回的数据
-            const list  = []
-            if(result.length > 0){
-                for(let i = 0;i < result.length;i++){
-                    // 每个标签下的条数
-                    const value = await dbModel.getFileCount(result[i].id) 
-                    list[i] = {
-                        id:result[i].id,
-                        name:result[i].category_name,
-                        value:value[0].count
-                    }
-                }
-            }
-            res.send({
-                code:200,
-                data:{
-                    count:count[0].count,
-                    list
-                }
-            })
-        }
-    } catch (error) {
-        console.error("获取分类失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"获取分类失败"
-        })
+// 校验必填参数，缺少时返回 400，而不是继续访问数据库
+const requireValue = (value, message) => {
+    if (value === undefined || value === null || value === '') {
+        const error = new Error(message);
+        error.status = 400;
+        throw error;
     }
-}
-//新建分类
-exports.addCategory = async (req,res) =>{
-    try {
-        const data = req.body
-        await dbModel.addCategory(data.value)
-        res.send({
-            code:200
-        })
-    } catch (error) {
-        console.error("新建分类失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"新建分类失败"
-        })
-    }
-}
-//修改分类名称
-exports.updateCategoryName = async (req,res) => {
-    try {
-        const data = req.body
-        const result = await dbModel.updateCategoryName(data.categoryId,data.categoryName)
-        res.send({
-            code:200,
-            msg:"修改分类名称成功"
-        })
-    } catch (error) {
-        console.error("修改分类名称失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"修改分类名称失败"
-        })
-    }
-}
-//删除分类
-exports.deleteCategory = async (req,res) =>{
-    try {
-        const data = req.body
-        const result  = await dbModel.deleteCategory(data.categoryId)
-        res.send({
-            code:200,
-            msg:"分类删除成功"
-        })
-    } catch (error) {
-        console.error("分类删除失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"删除分类失败"
-        })
-    }
-}
+    return value;
+};
 
-//获取标签
-exports.getLabel = async (req,res)=>{
-    try {
-        const result  = await dbModel.getLabel()
-        res.send({
-            code:200,
-            data:result
-        })
-    } catch (error) {
-        console.error("获取标签失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"获取标签失败"
-        })
-    }
-}
-//新建标签
-exports.addLabel = async (req,res) =>{
-    try {
-        const data = req.body
-        await dbModel.addCategory(data.value)
-        res.send({
-            code:200
-        })
-    } catch (error) {
-        console.error("新建标签失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"新建标签失败"
-        })
-    }
-}
-//删除标签
-exports.deleteLabel = async (req,res) =>{
-    try {
-        const data = req.body
-        const result  = await dbModel.deleteLabel(data.labelId)
-        res.send({
-            code:200,
-            msg:"标签删除成功"
-        })
-    } catch (error) {
-        console.error("标签删除失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"删除标签失败"
-        })
-    }
-}
+// 验证是否注册接口：判断 users 表中是否已有管理员
+exports.isRegister = async (req, res) => {
+    const count = await dbModel.isRegister();
+    success(res, { isRegistered: count > 0 }, count > 0 ? '已注册' : '未注册');
+};
 
-//获取文件
-exports.getFilePage = async (req,res) =>{
-    try {
-        const data = req.body
-        let count = NO_QUERY
-        const result = await dbModel.getFilePage(data.pageSize,data.nowPage,data.categoryId)
-        //需要count，再去查count
-        if(data.count){
-            const total = await dbModel.getFileCount(data.categoryId)
-            count = total[0].count
-        }
-        res.send({
-            code:200,
-            data:{
-                count,
-                result
-            }
-        })
-    } catch (error) {
-        console.error("获取文件失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"获取文件失败"
-        })
-    }
-}
+// 管理员注册接口：校验账号密码后创建管理员
+exports.register = async (req, res) => {
+    const name = requireValue(req.body.name, '账号不能为空');
+    const password = requireValue(req.body.password || req.body.psw, '密码不能为空');
+    const user = await dbModel.register({
+        name,
+        password,
+        moment: req.body.moment || new Date().toISOString(),
+    });
+    success(res, { id: user.id, name: user.name }, '注册成功');
+};
 
-//移动文件
-exports.moveFile = async (req,res) => {
-    try {
-        const data = req.body
-        const result = await dbModel.moveFile(data.fileId,data.categoryId)
-        res.send({
-            code:200,
-            msg:"移动文件成功"
-        })
-    } catch (error) {
-        console.error("移动文件失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"移动文件失败"
-        })
+// 管理员登录接口：校验账号密码，成功后生成 JWT
+exports.adminSignin = async (req, res) => {
+    const name = requireValue(req.body.name, '账号不能为空');
+    const password = requireValue(req.body.password || req.body.psw, '密码不能为空');
+    const user = await dbModel.adminSignin(name);
+    if (!user || user.password !== password) {
+        const error = new Error('账号或密码错误');
+        error.status = 401;
+        throw error;
     }
-}
+    const token = jwt.generateToken(user.name);
+    success(res, { id: user.id, name: user.name, token }, '登录成功');
+};
 
-//获取日记
-exports.getDiaryPage = async (req,res) => {
-    try {
-        const data = req.body
-        let count = NO_QUERY
-        const result = await dbModel.getDiaryPage(data.pageSize,data.nowPage,data.searchTerm)
-        //如果需要条数
-        if(data.count){
-            const total = await dbModel.getDiaryCount(data.searchTerm)
-            count = total[0].count
-        }
-        //确保数据库里有东西，如果有再把需要的数据整理发送前端
-        if(result.length > 0){
-            for(let i = 0;i<result.length;i++){
-                //如果有picture
-                if(result[i].picture){
-                    result[i].picture = result[i].picture.split(",")
-                }
-            }
-        }
-        res.send({
-            code:200,
-            data:{
-                count,
-                result
-            }
-        })
-    } catch (error) {
-        console.error("获取日记失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"获取日记失败"
-        })
-    }
-}
-//删除日记
-exports.deleteDiary = async (req,res) =>{
-    try {
-        const data = req.body
-        const result  = await dbModel.deleteDiary(data.diaryId)
-        res.send({
-            code:200,
-            msg:"日记删除成功"
-        })
-    } catch (error) {
-        console.error("日记删除失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"删除日记失败"
-        })
-    }
-}
+// 获取评论接口：分页返回评论、评论用户和所属文章标题
+exports.getComment = async (req, res) => {
+    const data = await dbModel.getCommentPage(req.body.pageSize, req.body.nowPage);
+    success(res, data);
+};
 
-//新建文章/图库
-exports.createArticle = async (req,res) =>{
-    try {
-        const data = req.body
-        const result = dbModel.createArticle(data.value)
-        res.send({
-            code:200,
-            msg:"新建文章/图库成功"
-        })
-    } catch (error) {
-        console.error("新建文章/图库失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"新建文章/图库失败"
-        })
-    }
-}
-//获取文章/图库（用于修改）
-exports.gainArticle = async (req,res) =>{
-    try {
-        const data = req.body
-        const result = await dbModel.gainArticle(data.id)
-        res.send({
-            code:200,
-            data:result,
-            msg:"获取文章/图库成功"
-        })
-    } catch (error) {
-        console.error("获取文章/图库失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"获取文章/图库失败"
-        })
-    }
-}
-//修改文章/图库
-exports.updateArticle = async (req,res) =>{
-    try {
-        const data = req.body
-        const result = await dbModel.updateArticle(data.id,data.value)
-        res.send({
-            code:200,
-            msg:"修改文章/图库成功"
-        })
-    } catch (error) {
-        console.error("修改文章/图库失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"修改文章/图库失败"
-        })
-    }
-}
+// 删除评论接口：根据评论 id 删除一条评论
+exports.deleteComment = async (req, res) => {
+    const affected = await dbModel.deleteComment(req.body.id ?? req.body.commentId);
+    success(res, { affected }, affected ? '评论删除成功' : '评论不存在');
+};
 
-//新建日记
-exports.createDiary = async (req,res) =>{
-    try {
-        const data = req.body
-        const result = dbModel.createDiary(data.value)
-        res.send({
-            code:200,
-            msg:"新建日记成功"
-        })
-    } catch (error) {
-        console.error("新建日记失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"新建日记失败"
-        })
-    }
-}
+// 获取私信接口：分页返回私信，并把当前页未读私信标为已读
+exports.getMessage = async (req, res) => {
+    const data = await dbModel.getMessagePage(req.body.pageSize, req.body.nowPage);
+    // 仅更新当前页中未读的私信，避免重复写库
+    const ids = data.list.filter((item) => item.isread === 0).map((item) => item.id);
+    await Promise.all(ids.map((id) => dbModel.updateMessageRead(id)));
+    success(res, data);
+};
 
-//上传文件
-exports.uploadFile = async (data,res) =>{
-    try {
-        const result = dbModel.uploadFile(data)
-        //传回给前端的数据
-        const value = {
-            ...data,
-            ...{id:result.insertId}//id
-        }
-        res.send({
-            code:200,
-            data:value,
-            msg:"上传文件成功"
-        })
-    } catch (error) {
-        console.error("上传文件失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"上传文件失败"
-        })
-    }
-}
-//删除文件
-exports.deleteFile = async (req,res)=>{
-    try {
-        const data = req.body
-        const result = await dbModel.deleteFile(data.fileId)
-        //处理真实的文件删除
-        handleFile.deleteFiles(data.filesUrl)
-        res.send({
-            code:200,
-            msg:"文件删除成功"
-        })
-    } catch (error) {
-        console.error("删除文件失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"删除文件失败"
-        })
-    }
-}
+// 删除私信接口：根据私信 id 删除一条私信
+exports.deleteMessage = async (req, res) => {
+    const affected = await dbModel.deleteMessage(req.body.id ?? req.body.messageId);
+    success(res, { affected }, affected ? '私信删除成功' : '私信不存在');
+};
 
-//获取总览数据
-exports.getOverview = async (req,res)=>{
-    try {
-        const article = await dbModel.getArticleCount(-1,-1,"",0)
-        const gallery = await dbModel.getArticleCount(-1,-1,"",1)
-        const diary = await dbModel.getDiaryCount("")
-        const files = handleFile.calculateFileSize("public/files")
-        const fileFormatSize = handleFile.formatSize(files)
-        const data = {
-            article:article[0].count,
-            gallery:gallery[0].count,
-            diary:diary[0].count,
-            file:fileFormatSize
-        }
-        res.send({
-            code:200,
-            data
-        })
-    } catch (error) {
-        console.error("获取总览数据失败",error)
-        res.status(500).send({
-            code:500,
-            msg:"获取总览数据失败"
-        })
+// 获取文章接口：查询文章或图库列表，同时返回总数和互动数量
+exports.getArticle = async (req, res) => {
+    const data = await dbModel.getArticlePage(req.body);
+    // 同时返回 list 和 result，兼容新接口与旧页面字段
+    success(res, { ...data, result: data.list });
+};
+
+// 修改文章状态接口：state 为 0 表示未发布，为 1 表示已发布
+exports.changeArticleState = async (req, res) => {
+    const id = req.body.articleId ?? req.body.id;
+    const { state } = req.body;
+    const [affected] = await dbModel.changeArticleState(id, state);
+    success(res, { affected }, affected ? '文章状态修改成功' : '文章不存在');
+};
+
+// 删除文章接口：删除文章并清理关联点赞、评论
+exports.deleteArticle = async (req, res) => {
+    const affected = await dbModel.deleteArticle(req.body.articleId ?? req.body.id);
+    success(res, { affected }, affected ? '文章删除成功' : '文章不存在');
+};
+
+// 文章状态统计接口：返回已发布和未发布文章总数
+exports.getArticleStateCount = async (req, res) => {
+    success(res, await dbModel.getArticleStateCounts());
+};
+
+// 获取分类接口：返回指定类型下的分类列表和每类内容数量
+exports.getCategory = async (req, res) => {
+    const classify = Number(req.body.classify ?? req.query.classify ?? 0);
+    success(res, await dbModel.getCategoryStats(classify));
+};
+
+// 新建分类接口：新增文章、图库或资源分类
+exports.addCategory = async (req, res) => {
+    const value = req.body.value || req.body;
+    requireValue(value.name ?? value.category_name, '分类名称不能为空');
+    const category = await dbModel.addCategory(value);
+    success(res, category, '新建分类成功');
+};
+
+// 修改分类名称接口：根据 categoryId 修改分类名称
+exports.updateCategoryName = async (req, res) => {
+    const id = req.body.categoryId ?? req.body.id;
+    const name = requireValue(req.body.categoryName ?? req.body.name, '分类名称不能为空');
+    const [affected] = await dbModel.updateCategoryName(id, name);
+    success(res, { affected }, affected ? '修改分类名称成功' : '分类不存在');
+};
+
+// 删除分类接口：删除分类，关联文章和文件自动变为未分类
+exports.deleteCategory = async (req, res) => {
+    const affected = await dbModel.deleteCategory(req.body.categoryId ?? req.body.id);
+    success(res, { affected }, affected ? '分类删除成功' : '分类不存在');
+};
+
+// 获取标签接口：查询全部文章标签
+exports.getLabel = async (req, res) => {
+    success(res, await dbModel.getLabel());
+};
+
+// 新建标签接口：把新标签写入 label 表
+exports.addLabel = async (req, res) => {
+    const value = req.body.value || req.body;
+    // [联调修复] 原实现误调用 addCategory，导致标签被写进分类表。
+    requireValue(value.name ?? value.label_name, '标签名称不能为空');
+    const label = await dbModel.addLabel(value);
+    success(res, label, '新建标签成功');
+};
+
+// 删除标签接口：根据 labelId 删除标签
+exports.deleteLabel = async (req, res) => {
+    const affected = await dbModel.deleteLabel(req.body.labelId ?? req.body.id);
+    success(res, { affected }, affected ? '标签删除成功' : '标签不存在');
+};
+
+// 获取文件接口：分页查询本地文件，并按分类筛选
+exports.getFilePage = async (req, res) => {
+    const data = await dbModel.getFilePage(req.body);
+    success(res, { ...data, result: data.list });
+};
+
+// 移动文件接口：把单个或批量文件移动到指定分类
+exports.moveFile = async (req, res) => {
+    const [affected] = await dbModel.moveFile(
+        req.body.fileId ?? req.body.fileIds,
+        req.body.categoryId,
+    );
+    success(res, { affected }, affected ? '移动文件成功' : '文件不存在');
+};
+
+// 删除文件接口：先删除数据库记录，再删除 public/files 下的实体文件
+exports.deleteFile = async (req, res) => {
+    // 先删除数据库记录，再清理本地文件，避免保留失效文件地址
+    const affected = await dbModel.deleteFile(req.body.fileId ?? req.body.fileIds);
+    const filesUrl = req.body.filesUrl;
+    if (filesUrl) {
+        await handleFile.deleteFiles(filesUrl);
     }
-}
+    success(res, { affected }, affected ? '文件删除成功' : '文件不存在');
+};
+
+// 文件上传接口：接收 multer 处理的文件并写入 local_file 表
+exports.uploadFile = async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        const error = new Error('请选择要上传的文件');
+        error.status = 400;
+        throw error;
+    }
+    const categoryId = Number(req.body.categoryId);
+    // multer 只负责落盘，这里补充数据库需要的名称、格式和分类
+    const values = req.files.map((file) => {
+        const parsed = path.parse(file.originalname);
+        return {
+            url: `/files/${file.filename}`,
+            fileName: parsed.name,
+            format: parsed.ext.replace('.', '').toLowerCase() || 'unknown',
+            categoryId: categoryId >= 0 ? categoryId : null,
+            moment: new Date().toISOString(),
+        };
+    });
+    const files = await dbModel.uploadFiles(values);
+    success(res, files, '上传文件成功');
+};
+
+// 获取日记接口：分页查询日记，支持标题和正文搜索
+exports.getDiaryPage = async (req, res) => {
+    const data = await dbModel.getDiaryPage(req.body);
+    success(res, { ...data, result: data.list });
+};
+
+// 新建日记接口：保存标题、正文、天气和本地图片地址
+exports.createDiary = async (req, res) => {
+    const value = req.body.value || req.body;
+    requireValue(value.title, '标题不能为空');
+    const diary = await dbModel.createDiary(value);
+    success(res, diary, '新建日记成功');
+};
+
+// 删除日记接口：根据 diaryId 删除一条日记
+exports.deleteDiary = async (req, res) => {
+    const affected = await dbModel.deleteDiary(req.body.diaryId ?? req.body.id);
+    success(res, { affected }, affected ? '日记删除成功' : '日记不存在');
+};
+
+// 新建文章/图库接口：根据 classify 区分文章和摄影图库
+exports.createArticle = async (req, res) => {
+    const value = req.body.value || req.body;
+    requireValue(value.title, '标题不能为空');
+    const article = await dbModel.createArticle(value);
+    success(res, article, '新建文章/图库成功');
+};
+
+// 获取文章/图库详情接口：返回编辑页所需的单条完整数据
+exports.gainArticle = async (req, res) => {
+    const article = await dbModel.gainArticle(req.body.articleId ?? req.body.id);
+    if (!article) {
+        const error = new Error('文章不存在');
+        error.status = 404;
+        throw error;
+    }
+    success(res, article);
+};
+
+// 修改文章/图库接口：更新标题、分类、标签、正文、封面或状态
+exports.updateArticle = async (req, res) => {
+    const value = req.body.value || req.body;
+    const affected = await dbModel.updateArticle(req.body.articleId ?? req.body.id, value);
+    success(res, { affected }, affected ? '修改文章/图库成功' : '文章不存在');
+};
+
+// 获取天气接口：返回日记页面可选择的天气及图标
+exports.getWeather = async (req, res) => {
+    success(res, await dbModel.getWeather());
+};
+
+// 总览数据接口：统计文章、图库、日记数量和本地文件夹大小
+exports.getOverview = async (req, res) => {
+    // 内容统计和文件大小互不依赖，并行查询减少等待时间
+    const [counts, bytes] = await Promise.all([
+        dbModel.getOverviewCounts(),
+        // [联调修复] 原实现漏了 await，导致 file 字段返回 Promise 对象。
+        handleFile.calculateFileSize(path.join(__dirname, '../public/files')),
+    ]);
+    success(res, {
+        ...counts,
+        file: handleFile.formatSize(bytes),
+    });
+};
+
+// 访问量接口：返回最近一周或最近一月的每日访问量
+exports.getVisits = async (req, res) => {
+    success(res, await dbModel.getVisits(req.body.length));
+};
+
+// 数据监测接口：返回移动端、PC 端及网站内容数量分布
+exports.getSurvey = async (req, res) => {
+    success(res, await dbModel.getSurvey(req.body.length));
+};

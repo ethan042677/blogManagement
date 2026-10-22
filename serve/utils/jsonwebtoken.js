@@ -1,26 +1,20 @@
-const jwt = require('jsonwebtoken')
-const secretKey = 'gsgrrgrsdfffcdff'
+// [联调修复] 原 verifyToken 在异步回调外立即返回值，导致校验结果始终是 undefined。
+const jwt = require('jsonwebtoken');
+const config = require('../config/default');
 
-//避免魔法数字，使用常量映射
-const PASS = 1;
-const FAIL = 0;
-//生成token
-exports.generateToken = (id) => {
-    const payload = {id:id,time:new Date()}
-    const token = jwt.sign(payload,secretKey,{expiresIn:60*60*24*30})
-    return token;
-}
-//解码token
-exports.verifyToken = (token)=>{
-    let payload;
-    jwt.verify(token, secretKey,(err,result)=>{
-        if(err){
-            payload = FAIL;
-            console.error("无效的令牌：",err.message)
-        }else{
-            payload = PASS;
-        }
-    });
-    return payload;
+// 生成 JWT：默认有效期 30 天
+exports.generateToken = (name) => jwt.sign(
+    { name },
+    config.jwtSecret,
+    { expiresIn: '30d' },
+);
 
-}
+// 校验 JWT：成功返回用户信息，失败返回 null
+exports.verifyToken = (token) => {
+    try {
+        return jwt.verify(token, config.jwtSecret);
+    } catch (error) {
+        console.error('无效的令牌：', error.message);
+        return null;
+    }
+};

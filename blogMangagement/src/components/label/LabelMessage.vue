@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import {getCurrentInstance,ref,watch} from 'vue'
+import { labelApi } from '../../api';
 import type { LabelData } from '../../utils/interface.ts';
 
 //props类型
@@ -32,23 +33,31 @@ type labelProps = {
     label:LabelData[],
 }
 const Props = withDefaults(defineProps<labelProps>(),{})
-// 当前分组
+// 当前标签列表
 const labelData = ref<LabelData[]>([])
 
 const proxy: any = getCurrentInstance()?.proxy
 /**
  *  @description 删除方法
  */
-const deleteCategory = (id:number|string)=>{
-    labelData.value = labelData.value.filter(
-        (obj:{id:number|string})=>{
-            return obj.id !== id
-        }
-    )
-    proxy.$message({ type: 'primary', message: '删除成功' })
+const emits = defineEmits(['changed'])
+const deleteCategory = async (id:number|string)=>{
+    try {
+        // 删除成功后同步父组件的标签列表
+        await labelApi.delete(Number(id))
+        labelData.value = labelData.value.filter(
+            (obj:{id:number|string})=>{
+                return obj.id !== id
+            }
+        )
+        emits('changed')
+        proxy.$message({ type: 'primary', message: '删除成功' })
+    } catch (error) {
+        proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '删除失败' })
+    }
 }
 
-//监听数据变化
+//监听父组件标签变化，并用新数组避免直接修改 props
 watch(
     ()=>Props.label,
     (data)=> {
