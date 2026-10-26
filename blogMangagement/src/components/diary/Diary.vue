@@ -1,6 +1,7 @@
 <template>
     <div class="diary">
         <yk-space dir="vertical" size="xl" style="width: 100%;padding-bottom: 24px;">
+            <!-- 渲染每一篇文章 -->
             <DiaryItem 
                 v-for="item in diaryList"
                 :key="item.id"
@@ -8,6 +9,7 @@
                 @deleteDiary="deleteDiary"
             />
         </yk-space>
+        <!-- 分页 -->
         <div class="diary-pagination">
             <yk-pagination :total="count" :page-size="pageSize" size="m"  @change="changePage"/>
         </div>

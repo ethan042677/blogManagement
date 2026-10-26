@@ -3,6 +3,7 @@
         <yk-space size="s" dir="vertical">
             <!-- 文章图片 -->
             <div class="gallery-item-image">
+                <!-- 最上面的照片 -->
                 <div class="gallery-item-image-cover">
                     <yk-image
                         :src="coverUrl"
@@ -14,17 +15,20 @@
                     />
                 </div>
                 <yk-space :size="2">
+                    <!-- 左边图片 -->
                     <div class="gallery-item-image-left imgs">
                         <yk-image :src="resolveAssetUrl(props.data?.content?.[0])" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content?.[0]"/>
                     </div>
+                    <!-- 中间照片 -->
                     <div class="gallery-item-image-middle imgs">
                         <yk-image :src="resolveAssetUrl(props.data?.content?.[1])" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content?.[1]"/>
                     </div>
+                    <!-- 右边照片 -->
                     <div class="gallery-item-image-right imgs">
                         <yk-image :src="resolveAssetUrl(props.data?.content?.[2])" width="78px" height="78px" :is-lazy="true" :preview="false" fit="cover" v-if="props.data?.content?.[2]"/>
                     </div>
                 </yk-space>
-                <!-- 撤回（右边） -->
+                <!-- 右上的选择框 -->
                 <yk-space class="gallery-item-right" :size="4">
                     <!-- 编辑 -->
                     <IconFillOutline/>

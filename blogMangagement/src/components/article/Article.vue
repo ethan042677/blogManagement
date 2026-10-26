@@ -7,6 +7,7 @@
             @deleteArticle="deleteArticle"
             @updateState="updateState"
         />
+        <!-- 分页 -->
         <div class="article-pagination">
             <yk-pagination :total="count" :page-size="pageSize" size="m"  @change="changePage"/>
         </div>
@@ -49,6 +50,7 @@ const proxy: any = getCurrentInstance()?.proxy
 const fetchArticles = async () =>{
     try {
         const data = await articleApi.list({ ...request, classify: 0 })
+        // 数量
         count.value = data.count
         articleList.value = data.list as ArticleData[]
     } catch (error) {
@@ -72,6 +74,7 @@ const deleteArticle = async (id:number) => {
 const updateState = async (obj:{id:number,state:number})=>{
     try {
         await articleApi.changeState(obj.id, obj.state)
+        // 重新渲染
         await fetchArticles()
         proxy.$message({ type: 'primary', message: obj.state === 1 ? '发布成功' : '撤回成功' })
     } catch (error) {
@@ -85,7 +88,7 @@ const changePage = (page:number)=>{
     fetchArticles()
 }
 
-// [联调新增] 筛选条件改变时回到第一页重新请求。
+//筛选条件改变时回到第一页重新请求。
 // 筛选条件改变后回到第一页重新查询
 watch(
     () => [props.categoryId, props.state, props.searchTerm, props.labelId],

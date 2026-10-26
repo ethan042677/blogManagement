@@ -69,10 +69,8 @@ const resultTime = computed(()=>{
 })
 /**获取天气图标 */
 const weatherUrl = computed(()=>{
-    // 兼容天气 id 从 0 或 1 开始的数据
-    const weather = weatherList.find((item) => item.id === Number(props.data.weatherId))
-        || weatherList[Math.max(Number(props.data.weatherId) - 1, 0)]
-        || weatherList[0]
+    // 精确匹配天气 id，找不到时回退到晴天，保证图标一定有值
+    const weather = weatherList.find((item) => item.id === Number(props.data.weatherId)) ?? weatherList[0]
     return `./src/assets/${weather.icon}`
 })
 

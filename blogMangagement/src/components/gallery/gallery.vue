@@ -2,6 +2,7 @@
     <div class="gallery">
         <div class="gallery-content">
             <div class="gallery-content-photos">
+                <!-- 渲染每一组图片 -->
                 <GalleryItem 
                     v-for="item in galleryList" 
                     :key="item.id" 
@@ -9,6 +10,7 @@
                     @deleteGallery="deleteGallery"
                 />
             </div>
+            <!-- 分页 -->
             <div class="gallery-pagination">
                 <yk-pagination :total="count" :page-size="pageSize" size="m"  @change="changePage"/>
             </div>
@@ -18,7 +20,7 @@
 
 <script lang="ts" setup>
 import { ref,onMounted,getCurrentInstance,watch } from 'vue';
-import { articleApi } from '../../api';
+import { articleApi } from '../../api/index.ts';
 import type{ GalleryData } from '../../utils/interface.ts';
 import GalleryItem from './GalleryItem.vue';
 

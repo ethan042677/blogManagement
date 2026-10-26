@@ -1,6 +1,6 @@
 <template>
     <div class="index-view">
-        <!-- 左侧导航栏 -->
+        <!-- 左侧导航栏 ，脱离文档流-->
         <leftMenu />
         <!-- 右侧内容 -->
         <router-view />

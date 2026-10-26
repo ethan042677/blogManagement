@@ -2,7 +2,7 @@
     <div class="head-bar">
         <yk-space align="center" :size="12" style="cursor: pointer;" @click="backHome">
             <img class="logo" src="../assets/vite.svg" alt="logo">
-            <span class="name">博客管理后台</span>
+            <span class="name">博客创作者中心</span>
         </yk-space>
         <yk-space align="center" :size="24">
             <!--消息 -->

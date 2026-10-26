@@ -35,6 +35,10 @@ const routes = [
                 path: 'diary',
                 component: () => import('../views/DiaryView.vue'), // 懒加载
             },
+            {
+                path: 'setting',
+                component: () => import('../views/SettingView.vue'), // 懒加载
+            },
         ],
     },
     {

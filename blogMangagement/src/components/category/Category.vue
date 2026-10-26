@@ -19,7 +19,7 @@
             </div>
         </yk-space>
         <yk-space style="flex: none;">
-            <!-- 新建 -->
+            <!-- 新建分类 -->
             <yk-popconfirm
                 title="新建分组"
                 @cancel="cancel"
@@ -60,6 +60,7 @@ import { onMounted,ref,getCurrentInstance } from 'vue';
 import { articleApi, categoryApi } from '../../api';
 import { useCategoryStore } from '../../store/category';
 import  CategoryMessage  from './CategoryMessage.vue'
+import { formatDate } from '../../utils/formatDate.ts';
 
 // [联调新增] 文章、图库、文件页面复用该组件，通过 classify 拉取对应分类。
 const props = withDefaults(defineProps<{ classify?: number }>(), {
@@ -87,10 +88,16 @@ const getCategory = async ()=>{
     try {
         // 分类数量与文章状态统计互不依赖，并行请求
         const requests:any[] = [categoryApi.list(props.classify)]
-        if (props.classify === 0) requests.push(articleApi.stateCounts())
+        //如果是文章
+        if (props.classify === 0) {
+            requests.push(articleApi.stateCounts())
+        }
         const [categoryData, stateData] = await Promise.all(requests)
+        // 分类数据
         categoryStore.data = categoryData.list
+        // 分类数量
         categoryStore.count = categoryData.count
+        // 文章状态
         articleState.value = stateData || []
     } catch (error) {
         articleState.value = []
@@ -121,8 +128,9 @@ async function confirm() {
             await categoryApi.add({
                 name: String(inputValue.value),
                 classify: props.classify,
-                moment: new Date().toISOString(),
+                moment: formatDate(),//获取时间
             })
+            // 重新获取分类
             await getCategory()
             inputValue.value = ''
             proxy.$message({ type: 'primary', message: '插入成功' })

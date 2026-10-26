@@ -56,6 +56,7 @@
 import { ref,computed,getCurrentInstance,onBeforeUnmount } from 'vue';
 import { weatherList } from '../../utils/weather';
 import { diaryApi, fileApi } from '../../api';
+import { formatDate } from '../../utils/formatDate';
 
 type DiaryForm = {
     title:string,
@@ -75,9 +76,10 @@ const previews = ref<string[]>([])
 // 是否正在提交
 const submitting = ref(false)
 
-// 根据当前天气 id 显示对应图标
+// 根据当前天气 id 显示对应图标，找不到时回退到晴天
 const weatherUrl = computed(()=>{
-    return `./src/assets/${weatherList[diaryFrom.value.weatherId]?.icon || weatherList[0].icon}`
+    const weather = weatherList.find((item) => item.id === diaryFrom.value.weatherId) ?? weatherList[0]
+    return `./src/assets/${weather.icon}`
 })
 // 选择天气
 const selectWeather = (id:number)=>{
@@ -106,6 +108,7 @@ const submit = async () => {
         proxy.$message({ type: 'warning', message: '请输入标题' })
         return
     }
+    // 正在提交
     submitting.value = true
     try {
         const uploaded = selectedFiles.value.length
@@ -115,7 +118,7 @@ const submit = async () => {
             ...diaryFrom.value,
             title: diaryFrom.value.title.trim(),
             picture: uploaded.map((file) => file.url),
-            moment: new Date().toISOString(),
+            moment: formatDate()
         })
         cancel()
         emits('created')

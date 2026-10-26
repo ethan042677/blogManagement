@@ -2,6 +2,7 @@
     <yk-space size="l" dir="vertical" class="file-view">
         <!-- TopTitle （标题与搜索栏组件） -->
         <TopTitle  :is-search="false" :name="'本地文件'" style="margin-bottom: 8px;">
+            <!-- 上传新文件 -->
             <template #custom>
                 <yk-space align="center">
                     <yk-text type="third">图片、视频、音频大小不超过20M</yk-text>

@@ -7,6 +7,7 @@
             label="操作"
             align="right"
         ></yk-table-column>
+        <!-- 渲染可选择标签 -->
         <template #tbody>
             <tr v-for="(item, index) in labelData" :key="index" class="yk-table__row">
                 <td class="yk-table__cell">
@@ -45,6 +46,7 @@ const deleteCategory = async (id:number|string)=>{
     try {
         // 删除成功后同步父组件的标签列表
         await labelApi.delete(Number(id))
+        // 在标签列表中删除
         labelData.value = labelData.value.filter(
             (obj:{id:number|string})=>{
                 return obj.id !== id

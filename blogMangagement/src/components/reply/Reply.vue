@@ -1,5 +1,6 @@
 <template>
     <yk-space size="m" class="reply">
+        <!-- 评论者的头像 -->
         <yk-avatar v-if="isComment" :img-url="avatarUrl"></yk-avatar>
         <yk-space dir="vertical" size="s" class="reply-main">
             <div class="reply-name">
@@ -10,12 +11,14 @@
             </div>
             <!-- 评论内容 -->
             <yk-text type="secondary">{{ content?.comment }}</yk-text>
+            <!-- 评论标签 -->
             <yk-space size="s" align="center" v-if="isComment">
                 <yk-tag type="primary">
                     {{ content?.article?.title }}
                 </yk-tag>
                 <yk-text type="danger" v-show="content?.complaint! >0">举报 {{ content?.complaint }}</yk-text>
             </yk-space>
+                <!-- 删除评论 -->
                 <IconDeleteOutline class="reply-main-delete" @click.stop="deleteReply(props.content?.id)"/>
         </yk-space>
     </yk-space>
@@ -33,8 +36,9 @@ const props = withDefaults(defineProps<ReplyProps>(),{
  * @description 删除单条评论方法
  */
 
-const emits = defineEmits(["delete"])//传给父的值
+const emits = defineEmits(["delete"])
 const deleteReply = (id:number|undefined) =>{
+    //通知父组件，删除此条评论
     emits("delete",id)
 }
 </script>

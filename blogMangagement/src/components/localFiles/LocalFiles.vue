@@ -1,6 +1,7 @@
 <template>
     <div class="files">
         <input ref="fileInput" class="file-input" type="file" multiple @change="uploadFiles">
+        <!-- 如果有选中照片，则显示 -->
         <div class="files-tool" v-show="selectPhotoId.length > 0">
             <yk-space>
                 <yk-checkbox :checked="checkedAll" :indeterminate="indeterminate" @change="handleChangeAll">
@@ -9,6 +10,7 @@
                 <yk-text>已选择 {{ selectPhotoId.length }} 项内容</yk-text>
                 <yk-text type="primary" style="cursor: pointer;" @click="cancelAll">取消选择</yk-text>
             </yk-space>
+            <!-- 删除按钮和转换分组按钮 -->
             <yk-space>
                 <IconDeleteOutline class="files-tool-delete" @click="deletePhotos"/>
                 <yk-popconfirm
@@ -19,13 +21,14 @@
                     trigger="click"
                 >
                     <IconSwitchOutline class="files-tool-switch"/>
+                    <!-- 渲染可选择分类 -->
                     <template #content>
                         <yk-scrollbar ref="scrollbar" height="148px" class="category">
                             <div
                                 class="category-item"
                                 v-for="item in categoryStore.data"
                                 :key="item.id"
-                                :class="{'category-selected':categorySeletedId === item.id}"
+                                :class="{'category-selected':categorySelectedId === item.id}"
                                 @click="changeCategory(item.id)"
                             >{{ item.name }} {{ item.value }}</div>
                         </yk-scrollbar>
@@ -33,6 +36,7 @@
                 </yk-popconfirm>
             </yk-space>
         </div>
+        <!-- 渲染存储的本地文件 -->
         <div class="files-main">
             <LocalFilesPhoto
                 v-for="item in files"
@@ -43,6 +47,7 @@
                 @changeCategoryId="changeCategoryId"
             />
         </div>
+        <!-- 分页组件 -->
         <div class="comment-pagination">
             <yk-pagination :total="count" :page-size="pageSize" size="m" @change="changePage"/>
         </div>
@@ -82,7 +87,7 @@ const checkedAll = ref(false)
 // 是否处于半选状态
 const indeterminate = ref(false)
 // 批量移动时选中的目标分类
-const categorySeletedId = ref<number|string>()
+const categorySelectedId = ref<number|string>()
 // 滚动条实例
 const scrollbar = ref()
 // 当前文件列表请求参数
@@ -96,7 +101,9 @@ const request = {
 const fetchFileData = async () => {
     try {
         const data = await fileApi.list(request)
+        // 数量
         count.value = data.count
+        // 实际渲染的本地文件信息
         files.value = data.list.map((item) => ({ ...item, selected: false }))
         selectPhotoId.value = []
         checkedAll.value = false
@@ -114,7 +121,7 @@ const chooseFiles = () => fileInput.value?.click()
 const uploadFiles = async (event: Event) => {
     const input = event.target as HTMLInputElement
     const selected = Array.from(input.files || [])
-    if (!selected.length) return
+    if (!selected.length) return;
     try {
         const categoryId = typeof props.categoryId === 'number' ? props.categoryId : -1
         await fileApi.upload(selected, categoryId)
@@ -148,10 +155,15 @@ const selectPhoto = (id:number|string) => {
     const file = files.value.find((item) => item.id === Number(id))
     if (!file) return
     file.selected = !file.selected
-    selectPhotoId.value = file.selected
-        ? [...new Set([...selectPhotoId.value, file.id])]
-        : selectPhotoId.value.filter((item) => item !== file.id)
+    // 如果选中就更新被选中文件数组，没有选中则移出
+    if(file.selected){
+        selectPhotoId.value = [...new Set([...selectPhotoId.value, file.id])]
+    }else{
+        selectPhotoId.value = selectPhotoId.value.filter((item) => item !== file.id)
+    }
+    // 更新半选状态
     indeterminate.value = selectPhotoId.value.length > 0 && selectPhotoId.value.length < files.value.length
+    // 更新全选
     checkedAll.value = selectPhotoId.value.length === files.value.length && files.value.length > 0
 }
 
@@ -185,7 +197,8 @@ const changeCategoryId = async (data:{ id:number; categoryId:number }) => {
 
 // 批量删除已选择的文件
 const deletePhotos = async () => {
-    if (!selectPhotoId.value.length) return
+    // 没有选中直接退出
+    if (!selectPhotoId.value.length) return;
     try {
         await deleteFilesByIds(selectPhotoId.value)
         await fetchFileData()
@@ -197,19 +210,19 @@ const deletePhotos = async () => {
 
 // 选择批量移动的目标分类
 const changeCategory = (id:number|string) => {
-    categorySeletedId.value = id
+    categorySelectedId.value = id
 }
 
 // 取消批量移动
 function cancel() {
-    categorySeletedId.value = undefined
+    categorySelectedId.value = undefined
 }
 
 // 确认批量移动文件
 const confirm = async () => {
-    if (categorySeletedId.value === undefined || !selectPhotoId.value.length) return
+    if (categorySelectedId.value === undefined || !selectPhotoId.value.length) return
     try {
-        await fileApi.move(selectPhotoId.value, Number(categorySeletedId.value))
+        await fileApi.move(selectPhotoId.value, Number(categorySelectedId.value))
         await fetchFileData()
         proxy.$message({ type: 'primary', message: '移动成功' })
     } catch (error) {

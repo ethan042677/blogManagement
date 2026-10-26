@@ -29,7 +29,7 @@ const gathers = ref(overLinks)
 const fetchGatherData = async ()=>{
     try {
         const data = await overviewApi.get()
-        //渲染数据
+        //渲染数据，取data的四个属性名限制key
         const keys: (keyof typeof data)[] = ['file', 'article', 'gallery', 'diary']
         gathers.value.forEach((el, index) => {
             el.total = data[keys[index]]

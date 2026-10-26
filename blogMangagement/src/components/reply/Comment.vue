@@ -50,9 +50,10 @@ const request:Request = {
 //获取数据方法
 const fetchCommentData = async ()=>{
     try {
-        // [联调接入] 评论列表改为真实接口。
         const data = await replyApi.comments(request)
+        // 拿到评论条数
         count.value = data.count
+        // 拿到评论列表
         comments.value = data.list
     } catch (error) {
         comments.value = []
@@ -65,6 +66,7 @@ const fetchCommentData = async ()=>{
 const deleteComment = async (id:number)=>{
     try {
         await replyApi.deleteComment(id)
+        // 重新渲染评论
         await fetchCommentData()
         proxy.$message({ type: 'primary', message: '删除评论成功' })
     } catch (error) {
@@ -75,6 +77,7 @@ const deleteComment = async (id:number)=>{
  * @description 翻页方法
  */
 const changePage = (page:number)=>{
+    // 更改页码
     request.nowPage = page
     fetchCommentData()
     // 翻页后滚动条回到最顶层

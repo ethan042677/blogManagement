@@ -12,6 +12,7 @@ exports.generateToken = (name) => jwt.sign(
 // 校验 JWT：成功返回用户信息，失败返回 null
 exports.verifyToken = (token) => {
     try {
+        //把token和config.jwtSecret中的做对比
         return jwt.verify(token, config.jwtSecret);
     } catch (error) {
         console.error('无效的令牌：', error.message);

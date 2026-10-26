@@ -1,4 +1,4 @@
-// [联调新增] 页面只调用这里的接口方法，不直接散落 axios 请求。
+// 页面只调用这里的接口方法，不直接散落 axios 请求。
 import request from '../utils/request'
 import type { ArticleData, CategoryData, DiaryData, FileData, GalleryData, LabelData, ReplyData } from '../utils/interface'
 
@@ -7,7 +7,8 @@ type PageRequest = {
     nowPage?: number
 }
 
-// 统一取出后端响应中的 data，页面层无需重复写 response.data.data
+// 统一取出后端发出数据中的 data，无需重复写 response.data.data
+//解析经过axios包装后的返回数据
 const unwrap = async <T>(promise: Promise<{ data: { code: number; data: T } }>): Promise<T> => {
     const response = await promise
     // 业务错误已由 axios 响应拦截器统一处理

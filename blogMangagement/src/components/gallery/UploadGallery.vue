@@ -7,10 +7,13 @@
         </button>
         <div class="upload-gallery-photos">
             <div class="upload-gallery-photos-item" v-for="item in photos" :key="item.id">
+                <!-- 摄影图库的照片 -->
                 <img :src="resolveAssetUrl(item.url)" :alt="item.fileName">
                 <IconStarFill class="upload-gallery-photos-item-star" v-show="item.url === cover"/>
                 <yk-space size="ss">
+                    <!-- 点击将图片设置为封面，显示小星星图标 -->
                     <p class="upload-gallery-photos-item-tool" v-show="item.url !== cover" @click="changeCover(item.url)">设为封面</p>
+                    <!-- 删除图标 -->
                     <IconDeleteOutline class="upload-gallery-photos-item-delete" @click="deletePhoto(item)"/>
                 </yk-space>
             </div>
@@ -60,7 +63,7 @@ const fetchPhotos = async () => {
 const upload = async (event: Event) => {
     const input = event.target as HTMLInputElement
     const files = Array.from(input.files || [])
-    if (!files.length) return
+    if (!files.length) return;
     try {
         await fileApi.upload(files)
         await fetchPhotos()
