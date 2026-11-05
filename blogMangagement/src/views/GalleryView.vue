@@ -14,7 +14,7 @@
 import { ref } from 'vue';
 import TopTitle from '../components/TopTitle.vue';
 import Category from '../components/category/Category.vue';
-import Gallery from '../components/gallery/Gallery.vue';
+import Gallery from '../components/gallery/gallery.vue';
 
 // 当前图库分类
 const categoryId = ref<number | string>(-1)

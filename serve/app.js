@@ -20,6 +20,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 注册业务接口和文件上传接口
 app.use('/', require('./routes/index'));
 app.use('/', require('./routes/files'));
+// 前台公开接口与后台管理接口完全隔离，不经过 JWT 鉴权。
+app.use('/public', require('./routes/public'));
 
 // 未匹配到任何接口时返回 404
 app.use((req, res) => {

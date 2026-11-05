@@ -3,6 +3,7 @@ const path = require('path');
 const dbModel = require('../models/db_model');
 const jwt = require('../utils/jsonwebtoken');
 const handleFile = require('../utils/handleFile');
+const Argon2 = require('../utils/argon2')
 
 // 统一成功响应格式，保证每个接口都返回 code、msg 和 data
 const success = (res, data, msg = '操作成功') => res.send({ code: 200, msg, data });
@@ -27,9 +28,10 @@ exports.isRegister = async (req, res) => {
 exports.register = async (req, res) => {
     const name = requireValue(req.body.name, '账号不能为空');
     const password = requireValue(req.body.password || req.body.psw, '密码不能为空');
+    const hashedPassword = await Argon2.hashPassword(password)
     const user = await dbModel.register({
         name,
-        password,
+        password:hashedPassword,
         moment: req.body.moment || new Date().toISOString(),
     });
     success(res, { id: user.id, name: user.name }, '注册成功');
@@ -40,7 +42,7 @@ exports.adminSignin = async (req, res) => {
     const name = requireValue(req.body.name, '账号不能为空');
     const password = requireValue(req.body.password || req.body.psw, '密码不能为空');
     const user = await dbModel.adminSignin(name);
-    if (!user || user.password !== password) {
+    if (!user || !(await Argon2.comparePasswords(user.password, password))) {
         const error = new Error('账号或密码错误');
         error.status = 401;
         throw error;

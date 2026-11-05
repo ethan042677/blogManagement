@@ -1,6 +1,7 @@
 // [联调新增] Sequelize 建表、关联与可重复执行的基础数据初始化。
 const fs = require('fs');
 const path = require('path');
+const { DataTypes } = require('sequelize');
 const {
     sequelize,
     User,
@@ -15,6 +16,7 @@ const {
     Message,
     Record,
 } = require('./sequelize');
+const Argon2 = require('../utils/argon2');
 
 const uploadDirectory = path.join(__dirname, '../public/files');
 
@@ -46,18 +48,29 @@ async function seedWeather() {
     }
 }
 
-// 初始化本地演示管理员
+// 初始化管理员。生产环境首次启动必须通过环境变量提供新的初始密码。
 async function seedUser() {
-    // [联调说明] 仅用于本地演示；生产环境应改为 bcrypt/argon2 哈希密码。
-    // 按用户名查找，已存在时保留原账号密码
-    await User.findOrCreate({
-        where: { name: 'tom' },
-        defaults: {
-            name: 'tom',
-            password: '123456',
+    const initialName = process.env.ADMIN_INITIAL_USER || 'tom';
+    const initialPassword = process.env.ADMIN_INITIAL_PASSWORD || '123456';
+    let user = await User.findOne({ where: { name: initialName } });
+
+    if (!user) {
+        if (process.env.NODE_ENV === 'production' && initialPassword === '123456') {
+            throw new Error('生产环境必须通过 ADMIN_INITIAL_PASSWORD 设置管理员初始密码');
+        }
+        // 只在首次创建管理员时计算 argon2 哈希，避免每次启动重复计算。
+        user = await User.create({
+            name: initialName,
+            password: await Argon2.hashPassword(initialPassword),
             moment: isoMoment(),
-        },
-    });
+        });
+    }
+
+    // 兼容旧版明文种子数据：启动时把非 argon2 哈希的密码原地升级
+    if (!String(user.password).startsWith('$argon2')) {
+        user.password = await Argon2.hashPassword(initialPassword);
+        await user.save();
+    }
 }
 
 // 初始化文章、图库和资源分类
@@ -331,12 +344,26 @@ async function seedRecords() {
     await Record.bulkCreate(records);
 }
 
+// 前台匿名点赞使用文章聚合字段；兼容旧库时只补列，不重建或清空数据。
+async function ensurePublicSchema() {
+    const queryInterface = sequelize.getQueryInterface();
+    const articleColumns = await queryInterface.describeTable('article');
+    if (!articleColumns.likes) {
+        await queryInterface.addColumn('article', 'likes', {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+        });
+    }
+}
+
 // 数据库总初始化：连接、建表、检查和填充演示数据
 async function initDatabase() {
     fs.mkdirSync(uploadDirectory, { recursive: true });
     await sequelize.authenticate();
     // [联调说明] 使用 sync 而非 alter，避免自动修改已有生产数据表结构。
     await sequelize.sync();
+    await ensurePublicSchema();
     await seedUser();
     await seedWeather();
     await seedCategories();

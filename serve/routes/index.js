@@ -1,4 +1,4 @@
-// [联调改造] 路由改为标准 Express Router，并为业务接口统一挂载认证中间件。
+// 路由使用标准 Express Router，并为业务接口统一挂载认证中间件。
 const express = require('express');
 const serve = require('../controllers/serve');
 const { authenticate } = require('../utils/auth');

@@ -1,4 +1,4 @@
-// [联调新增] 全站数据库统一使用 Sequelize，业务代码不再拼接 SQL。
+// [联调新增] 全站数据库统一使用 Sequelize。
 const { Sequelize, DataTypes } = require('sequelize');
 const config = require('../config/default');
 
@@ -70,6 +70,7 @@ const Article = sequelize.define('article', {
     content: { type: DataTypes.TEXT, allowNull: true },
     cover: { type: DataTypes.STRING(255), allowNull: true },
     views: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    likes: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     state: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     moment: { type: DataTypes.STRING(100), allowNull: false },
 }, commonOptions);

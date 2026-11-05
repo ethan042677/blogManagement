@@ -1,0 +1,162 @@
+:root {
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  color: #18191d;
+  background: #f3f0e9;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --paper: #f3f0e9;
+  --paper-deep: #e9e4da;
+  --surface: #fbf9f4;
+  --ink: #18191d;
+  --muted: #6d6d68;
+  --line: #d7d1c5;
+  --blue: #2b5aed;
+  /* 全站视觉缩放比例；调整这里即可统一放大或缩小界面。 */
+  --ui-scale: 1.1;
+  --el-color-primary: #2b5aed;
+  --el-color-primary-light-3: #6686f2;
+  --el-color-primary-light-5: #95aaf6;
+  --el-color-primary-light-7: #c6d2fb;
+  --el-color-primary-light-8: #dce3fc;
+  --el-color-primary-light-9: #edf1fe;
+  --el-color-primary-dark-2: #2248be;
+  --el-border-radius-base: 3px;
+  --el-font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 85% 1%, rgba(88, 133, 216, 0.11), transparent 24%),
+    var(--paper);
+  color: var(--ink);
+}
+
+/*
+ * CSS zoom 会同时放大字号、间距、控件和图片。
+ * 使用 100vw 而不是父元素百分比，避免部分移动端浏览器把滚动条宽度
+ * 排除在布局宽度之外，从而在放大后留下一条空白竖带。
+ */
+#app {
+  width: calc(100vw / var(--ui-scale));
+  zoom: var(--ui-scale);
+}
+
+/* 旧浏览器不支持 zoom 时退回普通全宽布局，避免内容被横向裁切。 */
+@supports not (zoom: 1) {
+  #app {
+    width: 100%;
+    zoom: normal;
+  }
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.site-container {
+  width: min(calc(100% - 64px), 1120px);
+  margin-inline: auto;
+}
+
+.reading-column {
+  width: min(100%, 720px);
+  margin-inline: auto;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--blue);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.eyebrow::before {
+  width: 32px;
+  height: 2px;
+  content: "";
+  background: currentColor;
+}
+
+.page-shell {
+  width: min(calc(100% - 64px), 1120px);
+  min-height: calc(100vh - 74px);
+  margin-inline: auto;
+  padding-bottom: 48px;
+}
+
+.editorial-title {
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+
+.subtle-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  color: var(--ink);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.subtle-link:hover {
+  color: var(--blue);
+}
+
+.el-button {
+  font-weight: 600;
+}
+
+.el-message {
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+@media (max-width: 780px) {
+  .site-container,
+  .page-shell {
+    width: min(calc(100% - 32px), 1120px);
+  }
+}
+
+@media (max-width: 470px) {
+  .site-container,
+  .page-shell {
+    width: min(calc(100% - 24px), 1120px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

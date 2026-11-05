@@ -243,14 +243,7 @@ exports.getArticlePage = async (data = {}) => {
     }
 
     // [联调修复] 批量统计点赞和评论，原实现既漏 await，也会触发 N+1 查询。
-    const [praiseRows, commentRows] = await Promise.all([
-        // 两组统计互不依赖，并行查询
-        Praise.findAll({
-            attributes: ['articleId', [fn('COUNT', col('id')), 'count']],
-            where: { articleId: { [Op.in]: ids } },
-            group: ['articleId'],
-            raw: true,
-        }),
+    const [commentRows] = await Promise.all([
         Comment.findAll({
             attributes: ['articleId', [fn('COUNT', col('id')), 'count']],
             where: { articleId: { [Op.in]: ids } },
@@ -258,7 +251,6 @@ exports.getArticlePage = async (data = {}) => {
             raw: true,
         }),
     ]);
-    const praiseMap = new Map(praiseRows.map((item) => [Number(item.articleId), Number(item.count)]));
     const commentMap = new Map(commentRows.map((item) => [Number(item.articleId), Number(item.count)]));
 
     return {
@@ -266,7 +258,8 @@ exports.getArticlePage = async (data = {}) => {
         page,
         list: result.rows.map((instance) => ({
             ...serializeArticle(instance),
-            praise: praiseMap.get(instance.id) || 0,
+            // 前台点赞只保存总数，后台列表直接展示文章上的聚合值。
+            praise: Number(instance.likes) || 0,
             comment: commentMap.get(instance.id) || 0,
         })),
     };
@@ -322,6 +315,7 @@ exports.createArticle = (value) => {
         label: splitList(value.label).join(','),
         state: Number(value.state ?? 0),
         views: Number(value.views ?? 0),
+        likes: Number(value.likes ?? 0),
         moment: value.moment || new Date().toISOString(),
     };
     if (data.classify === 1 && Array.isArray(value.content)) {
