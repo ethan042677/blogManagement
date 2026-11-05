@@ -67,7 +67,12 @@ const changePage = (page:number)=>{
 }
 
 // 生命周期：组件挂载后获取私信
-onMounted(fetchCommentData)
+onMounted(()=>{
+    //打开私信才请求私信数据
+    if(props.active){
+        fetchCommentData()
+    }
+})
 // 打开私信抽屉时重新获取最新数据
 watch(active, (value) => {
     if (value) fetchCommentData()

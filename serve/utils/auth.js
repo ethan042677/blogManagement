@@ -9,6 +9,7 @@ exports.authenticate = (req, res, next) => {
     const token = authorization.startsWith('Bearer ')
         ? authorization.slice(7)
         : req.query.token || req.body?.token;
+    
     // 没有token,401
     if (!token) {
         return res.status(401).send({ code: 401, msg: '缺少 token' });

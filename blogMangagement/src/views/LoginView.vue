@@ -21,7 +21,6 @@
                 <p v-if="error" class="login-error">{{ error }}</p>
                 <button type="submit" :disabled="loading">{{ loading ? '登录中...' : '登录' }}</button>
             </form>
-            <p class="login-hint">本地演示账号：tom / 123456</p>
         </section>
     </main>
 </template>
@@ -41,8 +40,8 @@ const loading = ref(false)
 const error = ref('')
 // 登录表单数据
 const form = reactive({
-    name: 'tom',
-    password: '123456',
+    name: '',
+    password: '',
 })
 
 // 提交登录：校验表单、获取 token 并进入后台
