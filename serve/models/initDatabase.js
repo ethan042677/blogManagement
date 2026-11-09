@@ -65,12 +65,6 @@ async function seedUser() {
             moment: isoMoment(),
         });
     }
-
-    // 兼容旧版明文种子数据：启动时把非 argon2 哈希的密码原地升级
-    if (!String(user.password).startsWith('$argon2')) {
-        user.password = await Argon2.hashPassword(initialPassword);
-        await user.save();
-    }
 }
 
 // 初始化文章、图库和资源分类

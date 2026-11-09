@@ -9,9 +9,12 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "test:auth": "node --test test/auth.test.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "storage:init": "node scripts/initRustfs.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1164.0",
+    "@aws-sdk/s3-request-presigner": "^3.1164.0",
     "argon2": "^0.45.1",
     "body-parser": "2.3.0",
     "cors": "2.8.6",

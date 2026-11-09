@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref,toRefs,onMounted,getCurrentInstance,watch } from 'vue';
+import { ref,toRefs,getCurrentInstance,watch } from 'vue';
 import { type MessageProps } from './reply';
 import { replyApi } from '../../api';
 import type { ReplyData } from '../../utils/interface';
@@ -66,14 +66,7 @@ const changePage = (page:number)=>{
     fetchCommentData()
 }
 
-// 生命周期：组件挂载后获取私信
-onMounted(()=>{
-    //打开私信才请求私信数据
-    if(props.active){
-        fetchCommentData()
-    }
-})
-// 打开私信抽屉时重新获取最新数据
+// 打开私信抽屉时获取最新数据
 watch(active, (value) => {
     if (value) fetchCommentData()
 })

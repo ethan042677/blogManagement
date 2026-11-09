@@ -19,4 +19,8 @@ app.config.globalProperties.$notification = YkNotification
 app.config.globalProperties.$message = YkMessage
 
 // [联调修复] Pinia 需要先于路由守卫使用。
-app.use(pinia).use(Icon).use(router).mount('#app')
+app.use(pinia).use(Icon).use(router)
+//修复登录闪烁，私信主动请求数据
+router.isReady().then(()=>{
+    app.mount('#app')
+})

@@ -26,7 +26,7 @@
                         </div>
                     </template>
                 </yk-popconfirm>
-                <!-- 管理分组 -->
+                <!-- 管理标签 -->
                 <yk-text type="primary" @click="showModal">
                     <IconSettingsOutline style="margin-right: 4px;"/>管理分组
                 </yk-text>
