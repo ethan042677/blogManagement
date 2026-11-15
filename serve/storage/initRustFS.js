@@ -10,7 +10,10 @@ const { internalClient } = require('./rustfs')
 
 //桶
 const bucket = config.rustfs.BUCKET
-
+const corsOrigins = config.rustfs.CORS_ORIGIN
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
 async function ensureBucket() {
     try{
         //确认桶是否存在，可访问
@@ -37,9 +40,7 @@ async function ensureCors() {
             CORSConfiguration: {
                 CORSRules: [
                     {
-                        AllowedOrigins: [
-                            config.rustfs.CORS_ORIGIN,
-                        ],
+                        AllowedOrigins: corsOrigins,
                         AllowedMethods: [
                             'GET',
                             'HEAD',
@@ -53,7 +54,7 @@ async function ensureCors() {
             },
         }),
     )
-    console.log(`CORS 已配置：${config.rustfs.CORS_ORIGIN}`)
+    console.log(`CORS 已配置：${corsOrigins.join(', ')}`)
 }
 // 公开阅读
 async function ensurePublicReadPolicy() {
