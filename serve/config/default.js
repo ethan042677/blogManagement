@@ -39,6 +39,9 @@ const config = {
 
         CORS_ORIGIN:
             process.env.RUSTFS_CORS_ORIGIN || "http://localhost:5173",
+
+        MAX_FILE_SIZE: 20 * 1024 * 1024,
+
     },
 }
 

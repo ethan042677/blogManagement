@@ -6,6 +6,8 @@
 *.key
 *.p12
 *.pfx
+serve/.env.local
+serve/.env-local
 
 # 依赖与包管理器缓存
 node_modules/
@@ -36,6 +38,7 @@ serve/public/files/*
 !serve/public/files/a.png
 !serve/public/files/hero.png
 !serve/public/files/.gitkeep
+
 
 # 本地 Docker 覆盖配置
 docker-compose.override.yml

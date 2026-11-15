@@ -1,6 +1,7 @@
 // 页面只调用这里的接口方法，不直接散落 axios 请求。
 import request from '../utils/request'
 import type { ArticleData, CategoryData, DiaryData, FileData, GalleryData, LabelData, ReplyData } from '../utils/interface'
+import {uploadOne} from './file'
 
 type PageRequest = {
     pageSize?: number
@@ -119,18 +120,30 @@ export const fileApi = {
         count: number
         list: FileData[]
     }>(request.post('/file', params)),
-    // 上传本地文件：使用 FormData 提交
-    upload: (files: File[], categoryId = -1) => {
-        // 文件必须使用 FormData，不能按普通 JSON 提交
-        const formData = new FormData()
-        files.forEach((file) => formData.append('files', file))
-        formData.append('categoryId', String(categoryId))
-        return unwrap<FileData[]>(request.post('/uploadFile', formData))
+
+    // 上传文件：使用 FormData 提交
+    upload: async (files: File[], categoryId = -1) => {
+        if(files.length > 20) throw new Error('一次最多上传20个')
+        const results: FileData[] = []
+
+        // 每次批三个，降低并发压力
+        for (let index = 0; index < files.length; index += 3) {
+            const batch = files.slice(index, index + 3)
+
+            const uploaded = await Promise.all(
+                batch.map((file) => uploadOne(file, categoryId)),
+            )
+
+            results.push(...uploaded)
+        }
+        return results
     },
-    // 删除文件：同时删除数据库记录和本地文件
-    delete: (fileId: number | number[], filesUrl?: string | string[]) => unwrap<{ affected: number }>(
-        request.post('/deleteFile', { fileId, filesUrl }),
+
+    // 删除文件：同时删除数据库记录和RustFS文件
+    delete: (fileId: number | number[]) => unwrap<{ affected: number }>(
+        request.post('/deleteFile', { fileId }),
     ),
+
     // 移动文件：支持单文件和批量移动
     move: (fileId: number | number[], categoryId: number) => unwrap<{ affected: number }>(
         request.post('/moveFile', { fileId, categoryId }),
@@ -179,3 +192,4 @@ export const weatherApi = {
     // 获取天气列表
     list: () => unwrap<{ id: number; name: string; icon: string }[]>(request.post('/weather')),
 }
+

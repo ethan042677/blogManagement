@@ -71,7 +71,7 @@ const resultTime = computed(()=>{
 const weatherUrl = computed(()=>{
     // 精确匹配天气 id，找不到时回退到晴天，保证图标一定有值
     const weather = weatherList.find((item) => item.id === Number(props.data.weatherId)) ?? weatherList[0]
-    return `./src/assets/${weather.icon}`
+    return weather.icon
 })
 
 /**删除气泡框 */

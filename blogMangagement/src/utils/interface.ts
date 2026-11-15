@@ -21,15 +21,6 @@ export interface CategoryData {
     value:number,
     moment?:string
 }
-//文件接口
-export interface FileData {
-    id:number,
-    url:string,
-    fileName:string,
-    format:string,
-    categoryId:number,
-    selected?:boolean//是否选择
-}
 //标签接口
 export interface LabelData {
     id:string,
@@ -73,4 +64,27 @@ export interface DiaryData {
     weatherId:number;
     content:string;//内容
     picture?:string[]
+}
+//variant(json)
+export type FileVariant = {
+    name: string
+    key: string
+    url: string
+    mimeType: string
+    width: number
+    height: number
+    sizeBytes: number
+}
+//文件接口
+export interface FileData {
+    id: number
+    url: string
+    fileName: string
+    format: string
+    categoryId: number
+    mimeType?: string
+    sizeBytes?: number
+    status?: string
+    variants?: FileVariant[]
+    selected?: boolean
 }

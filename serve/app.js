@@ -4,6 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const config = require('./config/default');
 const initDatabase = require('./models/initDatabase');
+const { recoverProcessingFiles } = require('./utils/mediaService')
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/', require('./routes/index'));
 app.use('/', require('./routes/files'));
 // 前台公开接口与后台管理接口完全隔离，不经过 JWT 鉴权。
 app.use('/public', require('./routes/public'));
+app.use('/admin/uploads', require('./routes/adminUpload'))
 
 // 未匹配到任何接口时返回 404
 app.use((req, res) => {
@@ -42,6 +44,7 @@ app.use((error, req, res, next) => {
 // 启动服务前先完成 Sequelize 初始化和演示数据检查
 async function start() {
     await initDatabase();
+    await recoverProcessingFiles()
     app.listen(config.port, () => {
         console.log(`Blog API listening on http://localhost:${config.port}`);
     });

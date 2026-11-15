@@ -4,6 +4,7 @@ const dbModel = require('../models/db_model');
 const jwt = require('../utils/jsonwebtoken');
 const handleFile = require('../utils/handleFile');
 const Argon2 = require('../utils/argon2')
+const media = require('../utils/mediaService')
 
 // 统一成功响应格式，保证每个接口都返回 code、msg 和 data
 const success = (res, data, msg = '操作成功') => res.send({ code: 200, msg, data });
@@ -155,7 +156,12 @@ exports.deleteLabel = async (req, res) => {
 // 获取文件接口：分页查询本地文件，并按分类筛选
 exports.getFilePage = async (req, res) => {
     const data = await dbModel.getFilePage(req.body);
-    success(res, { ...data, result: data.list });
+    const list = data.list.map(media.serializeFile)
+    success(res, { 
+        ...data, 
+        list,
+        result: list 
+    });
 };
 
 // 移动文件接口：把单个或批量文件移动到指定分类
@@ -167,15 +173,18 @@ exports.moveFile = async (req, res) => {
     success(res, { affected }, affected ? '移动文件成功' : '文件不存在');
 };
 
-// 删除文件接口：先删除数据库记录，再删除 public/files 下的实体文件
+// 删除文件接口：先删除数据库记录，再删除 rustFs 中的实体文件
 exports.deleteFile = async (req, res) => {
-    // 先删除数据库记录，再清理本地文件，避免保留失效文件地址
-    const affected = await dbModel.deleteFile(req.body.fileId ?? req.body.fileIds);
-    const filesUrl = req.body.filesUrl;
-    if (filesUrl) {
-        await handleFile.deleteFiles(filesUrl);
+    // 先删除数据库记录，再清理RustFS，避免保留失效文件地址
+    const ids = req.body.fileId ?? req.body.fileIds
+    const files = await dbModel.getFilesByIds(ids)
+    if (!files.length) {
+        return success(res, { affected: 0 }, '文件不存在')
     }
-    success(res, { affected }, affected ? '文件删除成功' : '文件不存在');
+    //删除
+    await media.deleteStoredFiles(files)
+    const affected = await dbModel.deleteFile(ids)
+    return success(res, { affected }, '文件删除成功');
 };
 
 // 文件上传接口：接收 multer 处理的文件并写入 local_file 表
@@ -257,8 +266,7 @@ exports.getOverview = async (req, res) => {
     // 内容统计和文件大小互不依赖，并行查询减少等待时间
     const [counts, bytes] = await Promise.all([
         dbModel.getOverviewCounts(),
-        // [联调修复] 原实现漏了 await，导致 file 字段返回 Promise 对象。
-        handleFile.calculateFileSize(path.join(__dirname, '../public/files')),
+        dbModel.getStorageBytes(),
     ]);
     success(res, {
         ...counts,

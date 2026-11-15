@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router'
 import SiteHeader from './components/SiteHeader.vue'
 import { usePageView } from './composables/usePageView'
+import FooterView from './views/FooterView.vue';
 //记录用户使用设备，返回后端
 usePageView()
 </script>
@@ -20,6 +21,7 @@ usePageView()
         </Transition>
       </RouterView>
     </main>
+    <FooterView />
   </div>
 </template>
 

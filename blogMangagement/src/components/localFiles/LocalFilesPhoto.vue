@@ -2,7 +2,9 @@
     <div class="files-photo">
         <div class="files-photo-item" :class="{'files-photo-selected':props.data?.selected}">
             <!-- 图片 -->
-            <yk-image :src="photoUrl" width="196px" height="172px":is-lazy="true" fit="contain"></yk-image>
+            <yk-image v-if="isImage" :src="photoUrl" width="196px" height="172px":is-lazy="true" fit="contain"></yk-image>
+            <!-- pdf -->
+            <a v-else class="pdf-preview" :href="photoUrl" target="_blank" rel="noreferrer"> </a>
             <yk-space class="files-photo-item-tool" size="s">
                 <!-- 删除按钮 -->
                 <IconDeleteOutline class="files-tool-delete" @click="deletePhoto"/>
@@ -57,6 +59,10 @@ type FilePhotoProps = {
 
 const props = withDefaults(defineProps<FilePhotoProps>(),{
 
+})
+
+const isImage = computed(() => {
+    return props.data?.mimeType?.startsWith('image/')
 })
 
 //把后端返回的本地文件地址转换为可访问图片地址

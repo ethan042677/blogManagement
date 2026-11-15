@@ -15,7 +15,7 @@
                                 :class="{selected:diaryFrom.weatherId === item.id}"
                                 @click="selectWeather(item.id)"
                             >
-                                <img :src="`./src/assets/${item.icon}`" alt="" style="width: 25px;height: 25px;">
+                                <img :src="item.icon" alt="" style="width: 25px;height: 25px;">
                             </div>
                         </yk-space>
                     </template>
@@ -34,7 +34,11 @@
             ></yk-text-area>
             <div class="diary-editor-form-picture">
                 <label class="picture-picker">
-                    <input type="file" accept="image/*" multiple @change="selectPictures">
+                    <input type="file" 
+                        accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif" 
+                        multiple 
+                        @change="selectPictures"
+                    >
                     <IconPlusOutline /> 添加本地图片
                 </label>
                 <div class="picture-preview" v-if="previews.length">
@@ -79,7 +83,7 @@ const submitting = ref(false)
 // 根据当前天气 id 显示对应图标，找不到时回退到晴天
 const weatherUrl = computed(()=>{
     const weather = weatherList.find((item) => item.id === diaryFrom.value.weatherId) ?? weatherList[0]
-    return `./src/assets/${weather.icon}`
+    return weather.icon
 })
 // 选择天气
 const selectWeather = (id:number)=>{

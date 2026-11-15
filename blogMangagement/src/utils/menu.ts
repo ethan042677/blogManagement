@@ -6,7 +6,7 @@ export const navLinks = [
     },
     {
         path:'localfile',
-        name:'本地文件',
+        name:'上传文件',
         icon:'IconFolderCloseOutline'
     },
     {

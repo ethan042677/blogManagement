@@ -1,6 +1,11 @@
 <template>
     <div class="files">
-        <input ref="fileInput" class="file-input" type="file" multiple @change="uploadFiles">
+        <input 
+            ref="fileInput" 
+            class="file-input" 
+            type="file" multiple 
+            accept="image/jpeg,image/png,image/webp,image/avif,application/pdf,.jpg,.jpeg,.png,.webp,.avif,.pdf"
+            @change="uploadFiles">
         <!-- 如果有选中照片，则显示 -->
         <div class="files-tool" v-show="selectPhotoId.length > 0">
             <yk-space>
@@ -169,8 +174,7 @@ const selectPhoto = (id:number|string) => {
 
 // 根据 id 获取文件地址并调用删除接口
 const deleteFilesByIds = async (ids:number[]) => {
-    const urls = files.value.filter((item) => ids.includes(item.id)).map((item) => item.url)
-    await fileApi.delete(ids, urls)
+    await fileApi.delete(ids)
 }
 
 // 删除单个文件

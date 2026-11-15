@@ -351,7 +351,7 @@ exports.updateArticle = async (id, value) => {
 exports.getCategoryStats = async (classify) => {
     const type = Number(classify);
     const countModel = type === 2 ? LocalFile : Article;
-    const countWhere = type === 2 ? {} : { classify: type };
+    const countWhere = type === 2 ? { status:'ready' } : { classify: type };
     const count = await countModel.count({ where: countWhere });
     const categories = await Category.findAll({
         where: { classify: type },
@@ -419,12 +419,30 @@ exports.addLabel = (value) => Label.create({
 // 删除标签
 exports.deleteLabel = (id) => Label.destroy({ where: { id: Number(id) } });
 
-/** 本地文件接口 */
+/** 文件接口 */
+//拿到文件位置
+exports.getFilesByIds = (fileId) => {
+    const ids = Array.isArray(fileId)
+        ? fileId.map(Number)
+        : String(fileId).split(',').map(Number)
+
+    return LocalFile.findAll({
+        where: {
+            id: {
+                [Op.in]: ids.filter(Number.isInteger),
+            },
+        },
+    })
+}
 // 获取文件列表：分页查询并支持分类筛选
 exports.getFilePage = async (data = {}) => {
     const { limit, offset, page } = normalizePage(data.pageSize, data.nowPage);
     const categoryId = parseCategoryIds(data.categoryId);
-    const where = categoryId === undefined ? {} : { categoryId };
+    // -1/未传分类时 parseCategoryIds 返回 undefined，此时只按状态筛选
+    const where = { status: 'ready' };
+    if (categoryId !== undefined) {
+        where.categoryId = categoryId;
+    }
     const result = await LocalFile.findAndCountAll({
         where,
         order: [['id', 'DESC']],
@@ -441,7 +459,12 @@ exports.getFilePage = async (data = {}) => {
 // 获取文件总数：支持全部、指定分类和未分类
 exports.getFileCount = (categoryId) => {
     const parsed = parseCategoryIds(categoryId);
-    return LocalFile.count({ where: parsed === undefined ? {} : { categoryId: parsed } });
+    return LocalFile.count({ 
+        where: {
+            status:'ready',
+            ...(parsed === undefined ? {} : { categoryId: parsed }),
+        } 
+    });
 };
 
 // 批量保存上传文件的信息
@@ -575,7 +598,9 @@ exports.getSurvey = async (length = 7) => {
             raw: true,
         }),
         exports.getOverviewCounts(),
-        LocalFile.count(),
+        LocalFile.count({
+            where:{status:'ready'}
+        }),
     ]);
     const deviceMap = new Map(deviceRows.map((item) => [Number(item.device), Number(item.value)]));
     return {
@@ -591,7 +616,12 @@ exports.getSurvey = async (length = 7) => {
         ],
     };
 };
-
+exports.getStorageBytes = async () => {
+    const total = await LocalFile.sum('sizeBytes', {
+        where: { status: 'ready' },
+    })
+    return Number(total || 0)
+}
 exports.models = {
     User,
     Category,

@@ -52,7 +52,7 @@ const Category = sequelize.define('category', {
 // 本地文件表：保存 public/files 下的文件地址和分类
 const LocalFile = sequelize.define('local_file', {
     id: {type: DataTypes.INTEGER,primaryKey: true,autoIncrement: true,},
-    url: {type: DataTypes.STRING(255),allowNull: false,},
+    url: { type: DataTypes.STRING(512), allowNull: false},
     fileName: {type: DataTypes.STRING(100),allowNull: false,field: 'file_name',},
     format: {type: DataTypes.STRING(32),allowNull: false,},
     categoryId: {type: DataTypes.INTEGER,allowNull: true,field: 'category_id',},

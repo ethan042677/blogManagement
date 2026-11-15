@@ -1,6 +1,6 @@
 <template>
     <div class="upload-gallery">
-        <input ref="fileInput" class="upload-input" type="file" accept="image/*" multiple @change="upload">
+        <input ref="fileInput" class="upload-input" type="file" accept="image/jpeg,image/png,image/webp,image/avif,.jpg,.jpeg,.png,.webp,.avif" multiple @change="upload">
         <button class="upload-trigger" type="button" @click="fileInput?.click()">
             <IconPlusOutline />
             上传本地图片
@@ -26,6 +26,7 @@ import { onMounted,ref,getCurrentInstance } from 'vue'
 import { fileApi } from '../../api'
 import type { FileData } from '../../utils/interface'
 import { resolveAssetUrl } from '../../utils/request'
+import { isImage } from '../../utils/judgePdf'
 
 const proxy:any = getCurrentInstance()?.proxy
 // 通知父组件照片列表和封面变化
@@ -46,11 +47,11 @@ const notify = () => {
     emits('coverChange', cover.value)
 }
 
-// 获取本地图片：图库编辑直接读取后端文件库
+// 获取图片：
 const fetchPhotos = async () => {
     try {
         const data = await fileApi.list({ pageSize: 100, nowPage: 1, categoryId: -1 })
-        photos.value = data.list
+        photos.value = data.list.filter(isImage)
         // 默认使用第一张图片作为封面
         cover.value = photos.value[0]?.url || ''
         notify()
@@ -85,7 +86,7 @@ const changeCover = (url:string) => {
 const deletePhoto = async (file:FileData) => {
     try {
         // 数据库记录和本地文件同时删除，成功后重新同步封面
-        await fileApi.delete(file.id, file.url)
+        await fileApi.delete(file.id)
         await fetchPhotos()
         proxy.$message({ type: 'primary', message: '删除成功' })
     } catch (error) {
