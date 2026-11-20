@@ -234,6 +234,8 @@ onMounted(loadArticle)
 }
 
 .article-content :deep(img) {
+  display: block;
+  max-width: 100%;
   height: auto;
   margin: 24px 0;
   border-radius: 3px;
@@ -241,6 +243,44 @@ onMounted(loadArticle)
 
 .article-content :deep(a) {
   color: var(--blue);
+}
+
+.article-content :deep(pre) {
+  overflow-x: auto;
+  margin: 22px 0;
+  border-radius: 4px;
+  background: #f4f5f3;
+  padding: 18px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.article-content :deep(code) {
+  border-radius: 3px;
+  background: #f1f2ef;
+  padding: 2px 5px;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.article-content :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+
+.article-content :deep(table) {
+  width: 100%;
+  margin: 22px 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.article-content :deep(th),
+.article-content :deep(td) {
+  border: 1px solid var(--line);
+  padding: 9px 11px;
+  text-align: left;
 }
 
 .toc {

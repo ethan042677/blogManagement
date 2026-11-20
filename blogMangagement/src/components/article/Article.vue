@@ -6,6 +6,7 @@
             :data="item" 
             @deleteArticle="deleteArticle"
             @updateState="updateState"
+            @editArticle="editArticle"
         />
         <!-- 分页 -->
         <div class="article-pagination">
@@ -16,9 +17,12 @@
 
 <script lang="ts" setup>
 import { ref,onMounted,getCurrentInstance,watch } from 'vue';
+import { useRouter } from 'vue-router';
 import ArticleItem from './ArticleItem.vue';
 import { articleApi } from '../../api';
 import type{ ArticleData } from '../../utils/interface.ts';
+
+const router = useRouter()
 
 // 父组件传入的筛选和分页参数
 const props = defineProps({
@@ -80,6 +84,11 @@ const updateState = async (obj:{id:number,state:number})=>{
     } catch (error) {
         proxy.$message({ type: 'danger', message: error instanceof Error ? error.message : '修改状态失败' })
     }
+}
+
+// 编辑入口把现有文章 ID 放进查询参数，编辑页据此读取草稿或旧正文。
+const editArticle = (id:number) => {
+    router.push({ path: '/editArticle', query: { id: String(id) } })
 }
 
 // 翻页方法：保存当前页并重新请求

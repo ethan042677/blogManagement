@@ -122,7 +122,7 @@ export const fileApi = {
     }>(request.post('/file', params)),
 
     // 上传文件：使用 FormData 提交
-    upload: async (files: File[], categoryId = -1) => {
+    upload: async (files: File[], categoryId = -1, articleId?: number) => {
         if(files.length > 20) throw new Error('一次最多上传20个')
         const results: FileData[] = []
 
@@ -131,7 +131,7 @@ export const fileApi = {
             const batch = files.slice(index, index + 3)
 
             const uploaded = await Promise.all(
-                batch.map((file) => uploadOne(file, categoryId)),
+                batch.map((file) => uploadOne(file, categoryId, articleId)),
             )
 
             results.push(...uploaded)

@@ -49,7 +49,7 @@ onMounted(loadPhotos)
       eyebrow="photography · selected series"
       before="摄影，"
       highlight="替时间保留一些证据。"
-      description="以摄影系列为单位组织照片，不把图片只当文章配图。每个系列保留地点、时间和一段简短描述，点击后进入完整图集。"
+      description=""
     />
 
     <!-- 摄影分类使用轻量文字胶囊，不抢占照片的视觉重心 -->

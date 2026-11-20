@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ContentImage from '../components/ContentImage.vue'
+import me from '../assets/images/me.png'
 </script>
 
 <template>
@@ -7,8 +7,8 @@ import ContentImage from '../components/ContentImage.vue'
     <!-- 关于页是静态品牌内容，不依赖后台接口，也不会出现登录或私信入口 -->
     <section class="about-grid">
       <div class="portrait">
-        <ContentImage alt="ethan肖像的抽象视觉" :tone="4" />
-        <span>LIN YE · 2026</span>
+        <el-Image :src="me"></el-Image>
+        <span>ethan · 2026</span>
       </div>
       <div>
         <div class="eyebrow">about · hello</div>
@@ -17,7 +17,7 @@ import ContentImage from '../components/ContentImage.vue'
           一个缓慢写作的开发者。
         </h1>
         <p class="about-copy">
-          目前居住在上海，做前端开发，也维护这个叫“伊森随笔”的个人博客。这里记录设计、代码、摄影和那些还没有形成结论的生活片段。
+          目前居住在保定，做前端开发，也维护这个叫“伊森随笔”的个人博客。这里记录设计、代码、摄影和那些还没有形成结论的生活片段。
         </p>
         <p class="about-copy">
           我希望它像一本可以随时翻开的个人杂志：每次来都能找到一篇值得读完的文章，而不是被更多入口和碎片信息追赶。
@@ -47,6 +47,9 @@ import ContentImage from '../components/ContentImage.vue'
 }
 
 .portrait {
+  /* ContentImage 内部使用 height: 100%，父级只有 min-height 时百分比高度会解析成 auto，
+     因此这里用 grid 让占位块撑满 min-height 的高度。 */
+  display: grid;
   position: relative;
   min-height: 420px;
   overflow: hidden;

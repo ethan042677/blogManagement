@@ -5,6 +5,7 @@ const jwt = require('../utils/jsonwebtoken');
 const handleFile = require('../utils/handleFile');
 const Argon2 = require('../utils/argon2')
 const media = require('../utils/mediaService')
+const articleContent = require('../utils/articleContent')
 
 // 统一成功响应格式，保证每个接口都返回 code、msg 和 data
 const success = (res, data, msg = '操作成功') => res.send({ code: 200, msg, data });
@@ -18,6 +19,19 @@ const requireValue = (value, message) => {
     }
     return value;
 };
+
+// 文章正文只通过 RustFS 传递。markdown 属于接口字段而不是 article 表字段，
+// 写库前必须移除，避免 Sequelize 把它当成未知列。
+const hasMarkdown = (value) => typeof value.markdown === 'string'
+
+const articleMetadata = (value, withMarkdown) => {
+    const data = { ...value }
+    delete data.markdown
+    delete data.contentMarkdown
+    // 新文章不再把正文写进 article.content；旧接口未传 markdown 时保持原行为。
+    if (withMarkdown && Number(data.classify ?? 0) === 0) delete data.content
+    return data
+}
 
 // 验证是否注册接口：判断 users 表中是否已有管理员
 exports.isRegister = async (req, res) => {
@@ -90,13 +104,41 @@ exports.getArticle = async (req, res) => {
 exports.changeArticleState = async (req, res) => {
     const id = req.body.articleId ?? req.body.id;
     const { state } = req.body;
+    // 发布文章前先复制一次 Markdown 快照。图库仍走原有状态逻辑，
+    // 因此这里只在 classify=0 的文章上访问文章正文对象。
+    if (Number(state) === 1) {
+        const article = await dbModel.gainArticle(id)
+        if (article?.classify === 0) {
+            const draft = await articleContent.readDraft(id)
+            // 旧文章没有 draft.md 时继续沿用 article.content 发布；
+            // 新文章如果既没有草稿也没有旧正文，则拒绝发布空文章。
+            if (draft !== null && draft.trim()) await articleContent.publishDraft(id)
+            else if (!article.content) {
+                const error = new Error('请先保存文章正文')
+                error.status = 400
+                throw error
+            }
+        }
+    }
     const [affected] = await dbModel.changeArticleState(id, state);
     success(res, { affected }, affected ? '文章状态修改成功' : '文章不存在');
 };
 
 // 删除文章接口：删除文章并清理关联点赞、评论
 exports.deleteArticle = async (req, res) => {
-    const affected = await dbModel.deleteArticle(req.body.articleId ?? req.body.id);
+    const articleId = req.body.articleId ?? req.body.id
+    const affected = await dbModel.deleteArticle(articleId);
+    // 数据库删除成功后再清理 RustFS，避免数据库仍引用已不存在正文。
+    // both operations are best-effort after the row is gone; failures are logged below.
+    if (affected) {
+        const results = await Promise.allSettled([
+            articleContent.deleteArticleContent(articleId),
+            media.deleteArticleFiles(articleId),
+        ])
+        results
+            .filter((result) => result.status === 'rejected')
+            .forEach((result) => console.error('文章资源清理失败:', result.reason))
+    }
     success(res, { affected }, affected ? '文章删除成功' : '文章不存在');
 };
 
@@ -234,7 +276,20 @@ exports.deleteDiary = async (req, res) => {
 exports.createArticle = async (req, res) => {
     const value = req.body.value || req.body;
     requireValue(value.title, '标题不能为空');
-    const article = await dbModel.createArticle(value);
+    const markdownProvided = hasMarkdown(value)
+    const article = await dbModel.createArticle(articleMetadata(value, markdownProvided));
+    if (Number(article.classify) === 0 && markdownProvided) {
+        try {
+            await articleContent.saveDraft(article.id, value.markdown)
+        } catch (error) {
+            // 正文写入失败时撤回刚创建的空文章和图片记录，避免留下不可用草稿。
+            await Promise.allSettled([
+                dbModel.deleteArticle(article.id),
+                media.deleteArticleFiles(article.id),
+            ])
+            throw error
+        }
+    }
     success(res, article, '新建文章/图库成功');
 };
 
@@ -246,13 +301,29 @@ exports.gainArticle = async (req, res) => {
         error.status = 404;
         throw error;
     }
-    success(res, article);
+    // 图库正文仍是本地文件数组，只有 classify=0 的文章需要读取 Markdown。
+    if (article.classify !== 0) return success(res, article)
+    const draft = await articleContent.readDraft(article.id)
+    const meta = draft === null ? null : await articleContent.getDraftMeta(article.id)
+    success(res, {
+        ...article,
+        // markdown 供编辑保存时保留原始正文，contentHtml 供 WangEditor 回填。
+        markdown: draft ?? '',
+        contentHtml: draft === null ? article.content || '' : articleContent.renderMarkdown(draft),
+        savedAt: meta?.lastModified ? new Date(meta.lastModified).toISOString() : null,
+    });
 };
 
 // 修改文章/图库接口：更新标题、分类、标签、正文、封面或状态
 exports.updateArticle = async (req, res) => {
     const value = req.body.value || req.body;
-    const affected = await dbModel.updateArticle(req.body.articleId ?? req.body.id, value);
+    const articleId = req.body.articleId ?? req.body.id
+    const markdownProvided = hasMarkdown(value)
+    if (markdownProvided) {
+        const article = await dbModel.gainArticle(articleId)
+        if (article?.classify === 0) await articleContent.saveDraft(articleId, value.markdown)
+    }
+    const affected = await dbModel.updateArticle(articleId, articleMetadata(value, markdownProvided));
     success(res, { affected }, affected ? '修改文章/图库成功' : '文章不存在');
 };
 

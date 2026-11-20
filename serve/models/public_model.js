@@ -7,6 +7,7 @@ const {
     Weather,
     Record,
 } = require('./sequelize');
+const articleContent = require('../utils/articleContent')
 
 const PAGE_DEFAULT = 8;
 const PAGE_MAX = 30;
@@ -157,9 +158,18 @@ exports.getPublishedArticle = async (id) => {
     await article.increment('views', { by: 1 });
     const refreshed = await Article.findByPk(article.id);
     const dto = await toArticleDto(refreshed);
+    // 新文章优先读取 RustFS 中的发布快照并转换成 HTML，继续复用前台现有
+    // content 字段和 v-html 渲染链路；旧文章没有 Markdown 时回退数据库正文。
+    const published = await articleContent.readPublished(article.id)
+    const content = published === null
+        ? article.content || ''
+        : articleContent.renderMarkdown(published)
     return {
         ...dto,
-        content: article.content || '',
+        content,
+        readMinutes: published === null
+            ? dto.readMinutes
+            : articleContent.readingMinutes(published),
         updatedAt: article.moment,
     };
 };

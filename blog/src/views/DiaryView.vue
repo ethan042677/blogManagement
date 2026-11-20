@@ -59,7 +59,7 @@ onMounted(() => loadDiaries())
       eyebrow="journal · ordinary days"
       before="日记，"
       highlight="把普通的一天留下来。"
-      description="日记不追求完整的观点，更像时间轴上的短波记录。天气、心情与照片作为辅助信息，不抢正文的注意力。"
+      description=""
     />
 
     <el-alert v-if="error" :title="error" type="error" show-icon :closable="false" class="mt-6">

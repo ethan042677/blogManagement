@@ -13,6 +13,8 @@ declare module 'vue' {
   export interface GlobalComponents {
     Article: typeof import('./src/components/article/Article.vue')['default']
     ArticleItem: typeof import('./src/components/article/ArticleItem.vue')['default']
+    ArticleMarkdownEditor: typeof import('./src/components/editor/ArticleMarkdownEditor.vue')['default']
+    ArticleMetaForm: typeof import('./src/components/editor/ArticleMetaForm.vue')['default']
     Category: typeof import('./src/components/category/Category.vue')['default']
     CategoryMessage: typeof import('./src/components/category/CategoryMessage.vue')['default']
     Comment: typeof import('./src/components/reply/Comment.vue')['default']

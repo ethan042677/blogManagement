@@ -1,7 +1,7 @@
 <template>
     <yk-space dir="vertical" size="l">
         <!-- 头部 -->
-        <TopTitle :is-search="true" :name="'博客文章'" style="margin-bottom: 8px;" @search="filters.searchTerm = $event"/>
+        <TopTitle :is-search="true" :name="'博客文章'" style="margin-bottom: 8px;" @search="filters.searchTerm = $event" />
         <!-- 分类组件 -->
         <Category :classify="0" @nowCategory="changeCategory" />
         <yk-space style="width: 100%;">
@@ -23,6 +23,7 @@ import TopTitle from '../components/TopTitle.vue';
 import Category from '../components/category/Category.vue';
 import Label from '../components/label/Label.vue';
 import Article from '../components/article/Article.vue';
+
 
 // [联调新增] 分类、发布状态和标签筛选实时下传给文章列表。
 // 文章页当前筛选条件

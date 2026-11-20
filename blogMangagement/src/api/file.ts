@@ -48,14 +48,25 @@ const waitForReady = async (fileId: number) => {
 }
 
 //上传
-export const uploadOne = async (file: File,categoryId: number,): Promise<FileData> => {
+export const uploadOne = async (
+    file: File,
+    categoryId: number,
+    articleId?: number,
+): Promise<FileData> => {
+    // 文章编辑器传入 articleId 后，后端会把对象写入文章专属前缀。
+    // 该标记不会写入 local_file 新字段，仍由现有 storage_key 表达归属。
+    if (articleId && !file.type.startsWith('image/')) {
+        throw new Error('文章只允许上传图片')
+    }
     //向后端拿通行签名url
     const ticket = await unwrap<UploadTicket>(
         request.post('/admin/uploads/presign',{
             fileName:file.name,
             mimeType:file.type,
             size:file.size,
-            categoryId
+            categoryId,
+            usage: articleId ? 'article' : 'file',
+            articleId,
         })
     )
     //不带JWT拦截的request

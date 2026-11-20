@@ -9,17 +9,23 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@wangeditor/code-highlight": "^1.0.3",
     "@wangeditor/editor": "^5.1.23",
     "axios": "^1.20.0",
     "echarts": "^6.1.0",
     "esbuild": "^0.28.1",
     "pinia": "^4.0.3",
+    "prismjs": "^1.30.0",
+    "turndown": "^7.2.5",
+    "turndown-plugin-gfm": "^1.0.2",
     "vue": "^3.5.40",
     "vue-router": "^5.2.0"
   },
   "devDependencies": {
     "@types/mockjs": "^1.0.10",
     "@types/node": "^24.13.3",
+    "@types/prismjs": "^1.26.6",
+    "@types/turndown": "^5.0.6",
     "@vitejs/plugin-vue": "^6.0.8",
     "@vue/tsconfig": "^0.9.1",
     "@yike-design/resolver": "^0.0.3",

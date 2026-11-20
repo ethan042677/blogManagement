@@ -22,8 +22,10 @@
     "express": "5.2.1",
     "file-type": "16.5.4",
     "jsonwebtoken": "9.0.3",
+    "markdown-it": "^15.0.3",
     "multer": "2.4.0",
     "mysql2": "3.24.5",
+    "prismjs": "^1.30.0",
     "sequelize": "6.37.8",
     "sharp": "^0.35.5"
   },

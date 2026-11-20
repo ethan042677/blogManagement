@@ -40,6 +40,10 @@ export interface ArticleData {
     state:number//状态0未发布1已发布
     comment:number;
     praise:number;//点赞次数
+    content?:string;//旧正文，仅用于兼容历史文章
+    markdown?:string;//RustFS 返回的 Markdown 草稿
+    contentHtml?:string;//用于回填 WangEditor 的安全 HTML
+    savedAt?:string|null;//RustFS 草稿对象最后保存时间
 }
 //图库
 export interface GalleryData {

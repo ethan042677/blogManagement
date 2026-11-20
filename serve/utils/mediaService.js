@@ -9,6 +9,7 @@ const config = require('../config/default')
 const {
     LocalFile,
     Category,
+    Article,
 } = require('../models/sequelize')
 
 const {
@@ -26,6 +27,13 @@ const MIME_EXTENSION = {
     'image/webp': 'webp',
     'image/avif': 'avif',
     'application/pdf': 'pdf',
+}
+
+// 文章图片的临时对象路径携带 articleId。处理完成后据此把转码结果写入
+// public/articles/{articleId}/images，从而和公共素材库使用不同前缀。
+function articleIdFromStagingKey(key) {
+    const match = String(key || '').match(/^staging\/articles\/(\d+)\//)
+    return match ? Number(match[1]) : null
 }
 //预设三个宽度
 const IMAGE_WIDTHS = [480, 1280, 1920]
@@ -78,6 +86,10 @@ async function presignUpload(body) {
     const mimeType = String(body.mimeType || '').toLowerCase()
     const size = Number(body.size)
     const categoryId = Number(body.categoryId)
+    // usage=article 表示该文件从文章编辑器上传。这个标记只用于生成对象路径，
+    // 不新增数据库列；现有 local_file.storage_key 已经足以记录资源归属。
+    const articleScoped = body.usage === 'article'
+    const articleId = Number(body.articleId)
     //文件实际扩展名
     const extension = MIME_EXTENSION[mimeType]
 
@@ -85,6 +97,16 @@ async function presignUpload(body) {
     if(!extension) throw httpError(400,'只允许上传PDF和图片')
     if(!Number.isInteger(size) || size < 0) throw httpError(400,'文件大小不合法')
     if(size > config.rustfs.MAX_FILE_SIZE) throw httpError(400,'文件大小超过限制')
+    if(articleScoped){
+        // 文章只保存 Markdown，图片作为独立资源引用，不接受 PDF。
+        if(extension === 'pdf') throw httpError(400,'文章只允许上传图片，不支持 PDF')
+        if(!Number.isInteger(articleId) || articleId <= 0) throw httpError(400,'文章编号不合法')
+        const article = await Article.findOne({
+            where: { id: articleId, classify: 0 },
+            attributes: ['id'],
+        })
+        if(!article) throw httpError(400,'文章不存在')
+    }
     if(Number.isInteger(categoryId) && categoryId >= 0){
         const category = await Category.findByPk(categoryId)
         if(!category) throw httpError(400,'文件分类不存在')
@@ -93,13 +115,16 @@ async function presignUpload(body) {
     //解析路径
     const parsed = path.parse(originalName)
     //生成文件路径
-    const storageKey = `staging/${monthPath()}/${crypto.randomUUID()}/original.${extension}`
+    // 两个前缀必须在 staging 阶段就区分，异步处理时才能把转码结果写回正确位置。
+    const storageKey = articleScoped
+        ? `staging/articles/${articleId}/${crypto.randomUUID()}/original.${extension}`
+        : `staging/${monthPath()}/${crypto.randomUUID()}/original.${extension}`
     // 在数据表中建立存储记录
     const file = await LocalFile.create({
         url: '',                          // NOT NULL 约束，pending 占位
         fileName: parsed.name.slice(0, 100),
         format: extension,
-        categoryId: categoryId >= 0 ? categoryId : null,
+        categoryId: !articleScoped && categoryId >= 0 ? categoryId : null,
         moment: formatDate(), // 字符串
         storageBucket: config.rustfs.BUCKET,
         storageKey,
@@ -216,6 +241,10 @@ async function getUploadStatus(id) {
 }
 //处理PDF
 async function savePdf(file,buffer) {
+    // 文章作用域在预签名阶段已经拒绝 PDF；这里再检查一次，防止旧签名或异常请求绕过。
+    if(articleIdFromStagingKey(file.storageKey)){
+        throw new Error('文章只允许上传图片，不支持 PDF')
+    }
     //路径
     const key = `public/files/${monthPath()}/${file.id}/original.pdf`
     // 回写服务端
@@ -254,6 +283,8 @@ async function saveImage (file,buffer,detectedMime) {
     const variants = [];
     //记录已经写入的key
     const createdKeys = [];
+    // staging key 是识别文章归属的唯一依据；在 processFile 删除它之前读取一次。
+    const articleId = articleIdFromStagingKey(file.storageKey)
     try {
         //逐宽度转码
         for(const width of widths){
@@ -264,7 +295,9 @@ async function saveImage (file,buffer,detectedMime) {
                 .toBuffer({ resolveWithObject: true })
 
             //生成路径
-            const key = `public/images/${monthPath()}/${file.id}/${width}.webp`
+            const key = articleId
+                ? `public/articles/${articleId}/images/${file.id}/${width}.webp`
+                : `public/images/${monthPath()}/${file.id}/${width}.webp`
             //写入服务器
             const result = await putBuffer({
                     key,
@@ -403,6 +436,24 @@ async function recoverProcessingFiles() {
         enqueueProcessing(file.id)
     })
 }
+
+// 删除文章时仅清理该文章前缀下的图片，不会误删公共素材库或其他文章资源。
+// local_file 仍保留原表结构，删除后需要同步移除这些上传记录，避免孤儿行。
+async function deleteArticleFiles(articleId) {
+    const normalizedId = Number(articleId)
+    if (!Number.isInteger(normalizedId) || normalizedId <= 0) return
+    const files = await LocalFile.findAll({
+        where: {
+            [Op.or]: [
+                { storageKey: { [Op.like]: `staging/articles/${normalizedId}/%` } },
+                { storageKey: { [Op.like]: `public/articles/${normalizedId}/%` } },
+            ],
+        },
+    })
+    if (!files.length) return
+    await deleteStoredFiles(files)
+    await LocalFile.destroy({ where: { id: { [Op.in]: files.map((file) => file.id) } } })
+}
 //批量清理函数
 async function deleteStoredFiles(files) {
     //待清理集合
@@ -429,4 +480,5 @@ module.exports = {
     recoverProcessingFiles,
     serializeFile,
     deleteStoredFiles,
+    deleteArticleFiles,
 }

@@ -48,7 +48,7 @@
                         </yk-tooltip>
                         <!-- 编辑 -->
                         <yk-tooltip placement="top" title="编辑" >
-                            <IconFillOutline/>
+                            <IconFillOutline @click="emits('editArticle', props.data.id)"/>
                         </yk-tooltip>
                         <!-- 删除 -->
                         <yk-popconfirm
@@ -83,7 +83,7 @@ type ArticleItemProps = {
 }
 const props = withDefaults(defineProps<ArticleItemProps>(),{})
 //传给父级处理的删除操作和更新状态
-const emits = defineEmits(['deleteArticle','updateState'])
+const emits = defineEmits(['deleteArticle','updateState','editArticle'])
 
 /** 图片url*/
 const coverUrl = computed(()=>{

@@ -26,6 +26,15 @@ const normalizePage = (pageSize, nowPage) => {
     return { limit, page, offset: (page - 1) * limit };
 };
 
+// 文章内嵌图片复用 local_file 作为上传记录，但对象路径以 public/articles/ 开头。
+// 后台“本地文件”页和公共素材选择器必须排除该前缀，避免文章图片污染图库。
+const libraryFileVisibility = () => ({
+    [Op.or]: [
+        { storageKey: null },
+        { storageKey: { [Op.notLike]: 'public/articles/%' } },
+    ],
+});
+
 const splitList = (value) => {
     // 数据库中的标签和图片地址使用逗号分隔
     if (Array.isArray(value)) return value.filter(Boolean);
@@ -439,7 +448,7 @@ exports.getFilePage = async (data = {}) => {
     const { limit, offset, page } = normalizePage(data.pageSize, data.nowPage);
     const categoryId = parseCategoryIds(data.categoryId);
     // -1/未传分类时 parseCategoryIds 返回 undefined，此时只按状态筛选
-    const where = { status: 'ready' };
+    const where = { status: 'ready', ...libraryFileVisibility() };
     if (categoryId !== undefined) {
         where.categoryId = categoryId;
     }
@@ -462,6 +471,7 @@ exports.getFileCount = (categoryId) => {
     return LocalFile.count({ 
         where: {
             status:'ready',
+            ...libraryFileVisibility(),
             ...(parsed === undefined ? {} : { categoryId: parsed }),
         } 
     });
@@ -599,7 +609,7 @@ exports.getSurvey = async (length = 7) => {
         }),
         exports.getOverviewCounts(),
         LocalFile.count({
-            where:{status:'ready'}
+            where:{status:'ready', ...libraryFileVisibility()}
         }),
     ]);
     const deviceMap = new Map(deviceRows.map((item) => [Number(item.device), Number(item.value)]));
@@ -618,7 +628,7 @@ exports.getSurvey = async (length = 7) => {
 };
 exports.getStorageBytes = async () => {
     const total = await LocalFile.sum('sizeBytes', {
-        where: { status: 'ready' },
+        where: { status: 'ready', ...libraryFileVisibility() },
     })
     return Number(total || 0)
 }
