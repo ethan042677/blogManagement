@@ -9,7 +9,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { createEditor, createToolbar } from '@wangeditor/editor'
 import '@wangeditor/editor/dist/css/style.css'
 import type { UploadedInlineImage } from './articleTypes'
-import { articleCodeDecorate } from '../../utils/rustHighLight'
+import { articleCodeDecorate } from '../../utils/rustHighlight'
 
 const props = withDefaults(defineProps<{
     initialHtml?: string
