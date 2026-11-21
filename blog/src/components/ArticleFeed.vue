@@ -22,8 +22,8 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <!-- 单列固定为 720px 阅读宽度，靠封面比例形成纵向瀑布流节奏 -->
-  <div class="reading-column mt-6 flex flex-col gap-[18px]">
+  <!-- 单列固定为 1000px 阅读宽度，靠封面比例形成纵向瀑布流节奏 -->
+  <div class="max-w-[1000px] mt-6 flex flex-col gap-[18px]">
     <!-- 首次加载时显示接近真实卡片高度的骨架，避免页面突然跳动 -->
     <template v-if="loading && articles.length === 0">
       <div

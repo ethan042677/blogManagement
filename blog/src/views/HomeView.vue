@@ -93,7 +93,7 @@ onMounted(loadHome)
 
     <!-- 最近写作与文章页共用 ArticleFeed 和 ArticleCard -->
     <section class="feed-section" aria-labelledby="latest-title">
-      <div class="reading-column mb-4 flex items-end justify-between gap-6">
+      <div class="max-w-[1000px] mb-4 flex items-end justify-between gap-6">
         <div>
           <h2 id="latest-title" class="editorial-title m-0 text-[30px]">最近写作</h2>
         </div>
@@ -108,7 +108,7 @@ onMounted(loadHome)
           <el-button size="small" class="mt-3" @click="loadHome">重新加载</el-button>
         </template>
       </el-alert>
-      <!-- 暂无文章 -->
+      
       <ArticleFeed
         v-else
         :articles="recent"

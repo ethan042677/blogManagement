@@ -59,32 +59,37 @@ function submitSearch(): void {
       </RouterLink>
     </nav>
 
-    <!-- 搜索使用 Element Plus 浮层，避免在页头长期占用输入框宽度 -->
-    <el-popover
-      v-model:visible="searchOpen"
-      placement="bottom-end"
-      :width="300"
-      trigger="click"
-      popper-class="search-popper"
-    >
-      <template #reference>
-        <el-button round class="!h-9 !px-4 !text-[11px]">
-          <el-icon class="mr-1.5"><Search /></el-icon>
-          搜索
-        </el-button>
-      </template>
-      <form class="flex items-center gap-2" @submit.prevent="submitSearch">
-        <el-input
-          v-model="searchTerm"
-          size="large"
-          clearable
-          autofocus
-          placeholder="搜索标题、简介或正文"
-          aria-label="搜索文章"
-        />
-        <el-button type="primary" size="large" :icon="ArrowRight" aria-label="提交搜索" @click="submitSearch" />
-      </form>
-    </el-popover>
+    <div class="site-actions">
+      <!-- 文章详情页把移动端目录按钮传送到这里，其他页面保持为空。 -->
+      <div id="article-toc-action" class="article-toc-action"></div>
+
+      <!-- 搜索使用 Element Plus 浮层，避免在页头长期占用输入框宽度 -->
+      <el-popover
+        v-model:visible="searchOpen"
+        placement="bottom-end"
+        :width="300"
+        trigger="click"
+        popper-class="search-popper"
+      >
+        <template #reference>
+          <el-button round class="!h-9 !px-4 !text-[11px]">
+            <el-icon class="mr-1.5"><Search /></el-icon>
+            搜索
+          </el-button>
+        </template>
+        <form class="flex items-center gap-2" @submit.prevent="submitSearch">
+          <el-input
+            v-model="searchTerm"
+            size="large"
+            clearable
+            autofocus
+            placeholder="搜索标题、简介或正文"
+            aria-label="搜索文章"
+          />
+          <el-button type="primary" size="large" :icon="ArrowRight" aria-label="提交搜索" @click="submitSearch" />
+        </form>
+      </el-popover>
+    </div>
   </header>
 
   <!-- 窄屏把同一导航放到第二行，保证五个栏目都能直接点击 -->
@@ -128,6 +133,18 @@ function submitSearch(): void {
 .nav-link.is-active::after {
   right: 0;
   left: 0;
+}
+
+/* 搜索与文章目录入口共用页头右侧；空插槽不会占据布局空间。 */
+.site-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.article-toc-action {
+  display: contents;
 }
 
 .mobile-nav {

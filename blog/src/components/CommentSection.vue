@@ -157,7 +157,7 @@ onMounted(loadComments)
 
 <style scoped lang="less">
 .comments {
-  width: min(100%, 680px);
+  width: min(100%, 1000px);
   margin: 40px auto 0;
   padding-top: 26px;
   border-top: 1px solid var(--line);
