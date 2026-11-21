@@ -85,7 +85,7 @@ onMounted(loadArticle)
 </script>
 
 <template>
-  <div class="page-shell shadow-md rounded-[5px] reader-page">
+  <div class="page-shell rounded-[5px] reader-page">
     <!-- 详情页从文章列表进入，并提供明确的返回路径 -->
     <RouterLink to="/articles" class="subtle-link mt-7 ml-2">
       <el-icon><ArrowLeft /></el-icon>
