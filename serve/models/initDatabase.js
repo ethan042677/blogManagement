@@ -360,13 +360,15 @@ async function initDatabase() {
     await ensurePublicSchema();
     await seedUser();
     await seedWeather();
-    await seedCategories();
-    await seedArticles();
-    await seedLabels();
-    await seedFiles();
-    await seedDiary();
-    await seedInteractions();
-    await seedRecords();
+    if(process.env.NODE_ENV !== 'production'){
+        await seedCategories();
+        await seedArticles();
+        await seedLabels();
+        await seedFiles();
+        await seedDiary();
+        await seedInteractions();
+        await seedRecords();
+    }
     console.log('Sequelize 数据库初始化与种子数据检查完成');
 }
 

@@ -82,7 +82,6 @@ function cancel() {
 function deleteDiary(id:number) {
     // 删除请求由父组件统一处理
     emits("deleteDiary",id)
-    proxy.$message({ type: 'primary', message: '删除成功' })
 }
 
 </script>

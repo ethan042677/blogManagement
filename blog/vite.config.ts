@@ -7,8 +7,8 @@ export default defineConfig({
   server: {
     port: 5174,
     proxy: {
-      // /public 只对应无需 JWT 的前台接口，避免误用后台管理接口。
-      '/public': {
+      // 前台公开接口走 /api/public，和后台共用同一个 /api 前缀。
+      '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
       },

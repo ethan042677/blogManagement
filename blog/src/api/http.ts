@@ -2,7 +2,7 @@ import axios from 'axios'
 import type { ApiResponse } from '../types/public'
 
 // 未配置环境变量时使用相对地址，由 Vite 代理到本地 Express 服务。
-export const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+export const API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 
 // 前台专用 Axios 实例不挂 JWT，也不会在 401 时跳转后台登录页。
 const http = axios.create({

@@ -10,6 +10,20 @@ export default defineConfig({
     AutoImport({ resolvers: [YikeResolver] }),
     Components({ resolvers: [YikeResolver] }),
   ],
+  server: {
+    proxy: {
+      // 后台接口统一走 /api，与生产 nginx 的转发规则一致。
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+      // 后端静态图片目录，/files/xxx 由 Vite 转发给 Express。
+      '/files': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+      },
+    },
+  },
   css: {
     preprocessorOptions: {
       less: {

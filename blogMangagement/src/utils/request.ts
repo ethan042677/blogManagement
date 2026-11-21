@@ -1,7 +1,7 @@
 // [联调新增] axios 统一实例：集中处理 API 地址、JWT、业务错误和登录失效。
 import axios from 'axios'
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/$/, '')
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 const TOKEN_KEY = 'blog_admin_token'//token的key(在localstorage中读)
 
 // 创建全局 axios 实例，所有接口统一使用该实例，自动响应拦截器，补全url
@@ -52,7 +52,7 @@ export const resolveAssetUrl = (url?: string) => {
     //如果这个地址已经以这几种协议开头，就直接返回
     if (/^(https?:|data:|blob:)/.test(url)) return url
     //真正处理url
-    if (url.startsWith('/files/')) return `${API_BASE_URL}${url}`
+    if (url.startsWith('/files/')) return url;
     return url
 }
 
