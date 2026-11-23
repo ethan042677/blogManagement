@@ -114,7 +114,7 @@ onMounted(async () => {
       description=""
     />
 
-    <div class="reading-column flex flex-wrap items-center gap-2 py-5">
+    <div class="flex flex-wrap items-center gap-2 py-5 max-w-[1000px]">
       <!-- 全部按钮：没有选中具体分类时默认高亮全部按钮 -->
       <button
         type="button"
