@@ -1,12 +1,24 @@
 const VISITOR_ID_KEY = 'blog_visitor_id'
 const LIKED_ARTICLES_KEY = 'blog_liked_articles'
 
+function createVisitorId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+
+  // 普通 HTTP 页面也可使用 getRandomValues，按 UUID v4 规范设置版本位和变体位。
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6]! & 0x0f) | 0x40
+  bytes[8] = (bytes[8]! & 0x3f) | 0x80
+
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return [hex.slice(0, 8), hex.slice(8, 12), hex.slice(12, 16), hex.slice(16, 20), hex.slice(20)].join('-')
+}
+
 // 首次请求点赞时生成访客 ID，之后复用浏览器中保存的值。
 export function getVisitorId(): string {
   const saved = localStorage.getItem(VISITOR_ID_KEY)
   if (saved) return saved
 
-  const visitorId = crypto.randomUUID()
+  const visitorId = createVisitorId()
   localStorage.setItem(VISITOR_ID_KEY, visitorId)
   return visitorId
 }
