@@ -4,6 +4,7 @@ import { ElButton } from 'element-plus'
 
 defineProps<{
   likes: number
+  liked: boolean
   loading: boolean
 }>()
 
@@ -16,8 +17,8 @@ defineEmits<{
 
 <template>
   <div class="reader-actions">
-    <el-button round :icon="Star" :loading="loading" @click="$emit('like')">
-      喜欢 {{ likes }}
+    <el-button round :icon="Star" :loading="loading" :disabled="liked" @click="$emit('like')">
+      {{ liked ? '已喜欢' : '喜欢' }} {{ likes }}
     </el-button>
     <el-button round :icon="ChatDotRound" @click="$emit('comment')">
       评论

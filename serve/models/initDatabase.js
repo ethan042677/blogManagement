@@ -338,7 +338,7 @@ async function seedRecords() {
     await Record.bulkCreate(records);
 }
 
-// 前台匿名点赞使用文章聚合字段；兼容旧库时只补列，不重建或清空数据。
+// 前台匿名点赞同时使用聚合字段和点赞记录，兼容旧库时只补列和索引。
 async function ensurePublicSchema() {
     const queryInterface = sequelize.getQueryInterface();
     const articleColumns = await queryInterface.describeTable('article');
@@ -347,6 +347,15 @@ async function ensurePublicSchema() {
             type: DataTypes.INTEGER,
             allowNull: false,
             defaultValue: 0,
+        });
+    }
+
+    // 按索引名称检查旧库，避免重复执行建索引操作。
+    const praiseIndexes = await queryInterface.showIndex('praise');
+    if (!praiseIndexes.some((index) => index.name === 'uq_praise_user_article')) {
+        await queryInterface.addIndex('praise', ['user_id', 'article_id'], {
+            unique: true,
+            name: 'uq_praise_user_article',
         });
     }
 }

@@ -6,6 +6,7 @@ import type {
   CommentPage,
   CreateCommentResult,
   DiaryEntry,
+  LikeResult,
   Paginated,
   PhotoCollection,
   SiteSummary,
@@ -38,9 +39,9 @@ export const publicApi = {
     http.get('/public/categories', { params: { classify } }),
   ),
 
-  // 点赞只返回最新聚合数量，不提交或接收用户标识。
-  like: (id: number) => unwrap<{ likes: number }>(
-    http.post(`/public/articles/${id}/like`),
+  // 点赞提交浏览器访客标识，服务端据此保证同一访客只能点赞一次。
+  like: (id: number, visitorId: string) => unwrap<LikeResult>(
+    http.post(`/public/articles/${id}/like`, { visitorId }),
   ),
 
   // 评论读取和创建均走独立的公开接口。

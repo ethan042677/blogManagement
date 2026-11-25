@@ -50,15 +50,18 @@ exports.article = async (req, res) => {
     success(res, data);
 };
 
-// 匿名点赞返回最新总数，不接收用户 ID 或其他身份参数。
+// 重复点赞也返回成功响应，前端可据此恢复当前访客的已点赞状态。
 exports.like = async (req, res) => {
-    const data = await publicModel.likeArticle(articleId(req));
+    const visitorId = String(req.body?.visitorId || '').trim();
+    if (!visitorId || visitorId.length > 100) badRequest('访客标识不正确');
+
+    const data = await publicModel.likeArticle(articleId(req), visitorId);
     if (!data) {
         const error = new Error('文章不存在或尚未发布');
         error.status = 404;
         throw error;
     }
-    success(res, data, '点赞成功');
+    success(res, data, data.alreadyLiked ? '已经喜欢过了' : '点赞成功');
 };
 
 // classify 只允许 0 或 1，数据层会把其他值归一为文章分类。

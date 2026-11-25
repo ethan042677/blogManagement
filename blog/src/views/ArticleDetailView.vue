@@ -21,6 +21,7 @@ const {
 } = useArticleDetail()
 const {
   likeArticle,
+  liked,
   liking,
   scrollToComments,
   shareArticle,
@@ -63,6 +64,7 @@ const {
       />
       <ArticleActions
         :likes="article.likes"
+        :liked="liked"
         :loading="liking"
         @like="likeArticle"
         @comment="scrollToComments"

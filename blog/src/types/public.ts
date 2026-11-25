@@ -86,3 +86,10 @@ export interface SiteSummary {
   photos: number
   diaries: number
 }
+
+// 点赞接口返回最新聚合数量及当前访客的点赞状态。
+export interface LikeResult {
+  likes: number
+  liked: boolean
+  alreadyLiked: boolean
+}

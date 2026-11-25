@@ -6,6 +6,7 @@ const {
     Diary,
     Weather,
     Record,
+    Praise,
 } = require('./sequelize');
 const articleContent = require('../utils/articleContent')
 
@@ -174,16 +175,42 @@ exports.getPublishedArticle = async (id) => {
     };
 };
 
-// 点赞只更新文章聚合字段，不记录点赞人，也不写入用户关联表。
-exports.likeArticle = async (id) => {
+// 点赞明细用于按访客去重，文章表的 likes 用于展示总数。
+exports.likeArticle = async (id, visitorId) => {
     const article = await Article.findOne({
-        attributes: ['id', 'likes'],
+        attributes: ['id'],
         where: { id: Number(id), classify: 0, state: 1 },
     });
     if (!article) return null;
-    await article.increment('likes', { by: 1 });
+
+    const [, created] = await Praise.findOrCreate({
+        where: {
+            userId: visitorId,
+            articleId: article.id,
+        },
+        defaults: {
+            userId: visitorId,
+            // 沿用现有分类，1 表示匿名访客。
+            userCategory: 1,
+            articleId: article.id,
+            moment: new Date().toISOString(),
+        },
+    });
+
+    // 只有新建点赞明细的请求才增加文章总数。
+    if (created) {
+        await Article.increment('likes', {
+            by: 1,
+            where: { id: article.id },
+        });
+    }
+
     const refreshed = await Article.findByPk(article.id, { attributes: ['likes'] });
-    return { likes: Number(refreshed.likes) || 0 };
+    return {
+        likes: Number(refreshed.likes) || 0,
+        liked: true,
+        alreadyLiked: !created,
+    };
 };
 
 // 分类数量只统计已发布内容，未发布草稿不会泄露到前台。

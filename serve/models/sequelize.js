@@ -93,7 +93,17 @@ const Praise = sequelize.define('praise', {
     userCategory: { type: DataTypes.INTEGER, allowNull: false, field: 'views' },
     articleId: { type: DataTypes.INTEGER, allowNull: false, field: 'article_id' },
     moment: { type: DataTypes.STRING(100), allowNull: false },
-}, commonOptions);
+}, {
+    ...commonOptions,
+    // 联合唯一索引约束同一访客和文章的组合，覆盖并发请求。
+    indexes: [
+        {
+            unique: true,
+            fields: ['user_id', 'article_id'],
+            name: 'uq_praise_user_article',
+        },
+    ],
+});
 
 // 评论表：保存评论用户、内容、举报数和已读状态
 const Comment = sequelize.define('comment', {
