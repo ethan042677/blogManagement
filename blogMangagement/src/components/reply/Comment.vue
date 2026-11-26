@@ -100,7 +100,7 @@ onMounted(()=>{
     position: relative;
     padding: @space-xl @space-xl 0;
     border-radius: @radius-m;
-    background: @white;
+    background: @bg-color-l;
     width: 100%;
     overflow: hidden;
 
@@ -133,7 +133,7 @@ onMounted(()=>{
         justify-content: center;
         border-top: 1px solid @line-color-s;
         box-sizing: border-box;
-        background: @white;
+        background: @bg-color-l;
     }
 }
 

@@ -301,7 +301,7 @@ onMounted(fetchFileData)
         align-items: center;
         justify-content: center;
         box-sizing: border-box;
-        background: @white;
+        background: @bg-color-l;
     }
 }
 </style>

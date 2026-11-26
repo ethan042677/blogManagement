@@ -24,11 +24,11 @@ export const navLinks = [
         name:'随笔随记',
         icon:'IconFillOutline'
     },
-    {
-        path:'setting',
-        name:'设置',
-        icon:'IconSettingsOutline'
-    }
+    // {
+    //     path:'setting',
+    //     name:'设置',
+    //     icon:'IconSettingsOutline'
+    // }
 ]
 
 //总览卡片数据
